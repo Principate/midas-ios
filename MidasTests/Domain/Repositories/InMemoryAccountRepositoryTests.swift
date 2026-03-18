@@ -24,7 +24,7 @@ struct InMemoryAccountRepositoryTests {
         let repository = InMemoryAccountRepository()
         let account = Account(
             name: "Test Account",
-            subtitle: "Test",
+            accountType: .checking,
             currencySymbol: "$",
             balance: 1000.00,
             iconType: .bank
@@ -38,7 +38,7 @@ struct InMemoryAccountRepositoryTests {
         repository.loadInitialAccounts()
         let account = Account(
             name: "New Account",
-            subtitle: "New",
+            accountType: .savings,
             currencySymbol: "€",
             balance: 500.00,
             iconType: .euro
@@ -51,7 +51,7 @@ struct InMemoryAccountRepositoryTests {
         let repository = InMemoryAccountRepository()
         let account = Account(
             name: "Savings",
-            subtitle: "High Yield",
+            accountType: .savings,
             currencySymbol: "£",
             balance: 25_000.00,
             usdEquivalent: 32_000.00,
@@ -61,7 +61,7 @@ struct InMemoryAccountRepositoryTests {
 
         let stored = repository.accounts.last
         #expect(stored?.name == "Savings")
-        #expect(stored?.subtitle == "High Yield")
+        #expect(stored?.accountType == .savings)
         #expect(stored?.currencySymbol == "£")
         #expect(stored?.balance == 25_000.00)
         #expect(stored?.usdEquivalent == 32_000.00)

@@ -99,7 +99,7 @@ private extension HomeView {
                     .font(.body)
                     .fontWeight(.medium)
 
-                Text(account.subtitle)
+                Text(account.formattedSubtitle)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

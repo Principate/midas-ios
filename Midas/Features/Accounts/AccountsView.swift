@@ -24,7 +24,7 @@ struct AccountsView: View {
             .navigationTitle("Accounts")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarRole(.navigationStack)
-            .sheet(isPresented: $isShowingCreateAccount) {
+            .fullScreenCover(isPresented: $isShowingCreateAccount) {
                 CreateAccountView(accountRepository: accountRepository)
             }
         }
@@ -72,7 +72,7 @@ private extension AccountsView {
                 Text(account.name)
                     .font(.system(size: 20, weight: .regular, design: .serif))
 
-                Text(formattedSubtitle(for: account))
+                Text(account.formattedSubtitle)
                     .font(.caption2)
                     .tracking(2)
                     .foregroundStyle(.secondary)
@@ -86,17 +86,9 @@ private extension AccountsView {
         }
         .padding(.vertical, 18)
     }
-
-    func formattedSubtitle(for account: Account) -> String {
-        let parts = account.subtitle.split(separator: " ", maxSplits: 1)
-        if parts.count == 2 {
-            return "\(parts[0].uppercased()) • \(parts[1].uppercased())"
-        }
-        return account.subtitle.uppercased()
-    }
 }
 
-// MARK: - Create Account Button
+// MARK: - Create Account Section
 
 private extension AccountsView {
     var createAccountButton: some View {

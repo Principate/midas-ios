@@ -14,14 +14,14 @@ class InMemoryAccountRepository: AccountRepositoryProtocol {
         accounts = [
             Account(
                 name: "Global Checking",
-                subtitle: "USD Primary",
+                accountType: .checking,
                 currencySymbol: "$",
                 balance: 45_000.00,
                 iconType: .bank
             ),
             Account(
                 name: "European Vault",
-                subtitle: "EUR Holding",
+                accountType: .savings,
                 currencySymbol: "€",
                 balance: 120_500.00,
                 usdEquivalent: 131_245.50,
@@ -29,14 +29,14 @@ class InMemoryAccountRepository: AccountRepositoryProtocol {
             ),
             Account(
                 name: "Bespoke Investments",
-                subtitle: "Multi-Asset",
+                accountType: .creditCard,
                 currencySymbol: "$",
                 balance: 68_857.00,
                 iconType: .chart
             ),
             Account(
                 name: "London Trust",
-                subtitle: "GBP Reserve",
+                accountType: .savings,
                 currencySymbol: "£",
                 balance: 15_000.00,
                 usdEquivalent: 19_200.00,

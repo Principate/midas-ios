@@ -27,7 +27,7 @@ struct HomeViewModelTests {
         repository.accounts = [
             Account(
                 name: "Test",
-                subtitle: "Test",
+                accountType: .checking,
                 currencySymbol: "$",
                 balance: 1000.00,
                 iconType: .bank
@@ -49,7 +49,7 @@ struct HomeViewModelTests {
         repository.accounts = [
             Account(
                 name: "Test",
-                subtitle: "Test",
+                accountType: .savings,
                 currencySymbol: "€",
                 balance: 100.00,
                 usdEquivalent: 110.00,
@@ -65,7 +65,7 @@ struct HomeViewModelTests {
         repository.accounts = [
             Account(
                 name: "Test",
-                subtitle: "Test",
+                accountType: .checking,
                 currencySymbol: "$",
                 balance: 500.00,
                 iconType: .bank
@@ -80,7 +80,7 @@ struct HomeViewModelTests {
         repository.accounts = [
             Account(
                 name: "Test",
-                subtitle: "Test",
+                accountType: .checking,
                 currencySymbol: "$",
                 balance: 1234.56,
                 iconType: .bank
@@ -97,7 +97,7 @@ struct HomeViewModelTests {
         let viewModel = HomeViewModel(accountRepository: repository)
         let account = Account(
             name: "Euro Account",
-            subtitle: "EUR",
+            accountType: .savings,
             currencySymbol: "€",
             balance: 120_500.00,
             iconType: .euro
@@ -111,7 +111,7 @@ struct HomeViewModelTests {
         let viewModel = HomeViewModel(accountRepository: repository)
         let account = Account(
             name: "USD Account",
-            subtitle: "USD",
+            accountType: .checking,
             currencySymbol: "$",
             balance: 1000.00,
             iconType: .bank
@@ -124,7 +124,7 @@ struct HomeViewModelTests {
         let viewModel = HomeViewModel(accountRepository: repository)
         let account = Account(
             name: "Euro Account",
-            subtitle: "EUR",
+            accountType: .savings,
             currencySymbol: "€",
             balance: 120_500.00,
             usdEquivalent: 131_245.50,
