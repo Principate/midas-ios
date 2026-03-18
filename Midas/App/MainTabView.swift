@@ -7,6 +7,8 @@ import SwiftUI
 
 struct MainTabView: View {
     @State private var selectedTab: AppTab = .portfolio
+    @State private var accountRepository = InMemoryAccountRepository()
+    @State private var isShowingCreateAccount = false
     
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -22,6 +24,9 @@ struct MainTabView: View {
                     .padding(.bottom, 80)
             }
         }
+        .sheet(isPresented: $isShowingCreateAccount) {
+            CreateAccountView(accountRepository: accountRepository)
+        }
     }
 }
 
@@ -32,9 +37,9 @@ private extension MainTabView {
     var tabContent: some View {
         switch selectedTab {
         case .portfolio:
-            HomeView()
-        case .allocations:
-            AllocationsView()
+            HomeView(accountRepository: accountRepository)
+        case .accounts:
+            AccountsView(accountRepository: accountRepository)
         case .profile:
             ProfileView()
         }
@@ -45,7 +50,7 @@ private extension MainTabView {
 
 private extension MainTabView {
     var floatingActionButton: some View {
-        Button(action: {}) {
+        Button(action: { isShowingCreateAccount = true }) {
             Image(systemName: "plus")
                 .font(.title2)
                 .fontWeight(.medium)

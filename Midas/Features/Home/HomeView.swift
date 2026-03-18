@@ -6,8 +6,12 @@
 import SwiftUI
 
 struct HomeView: View {
-    @State private var viewModel = HomeViewModel()
-    
+    @State private var viewModel: HomeViewModel
+
+    init(accountRepository: AccountRepositoryProtocol) {
+        _viewModel = State(initialValue: HomeViewModel(accountRepository: accountRepository))
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
@@ -16,7 +20,9 @@ struct HomeView: View {
             }
         }
         .onAppear {
-            viewModel.loadSampleAccounts()
+            if viewModel.accounts.isEmpty {
+                viewModel.loadAccounts()
+            }
         }
     }
 }
@@ -132,5 +138,5 @@ private extension HomeView {
 }
 
 #Preview {
-    HomeView()
+    HomeView(accountRepository: InMemoryAccountRepository())
 }
