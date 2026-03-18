@@ -10,32 +10,113 @@ struct AccountsView: View {
     @State private var isShowingCreateAccount = false
 
     var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "circle.lefthalf.filled")
-                .font(.system(size: 48))
-                .foregroundStyle(.secondary)
-
-            Text("Accounts")
-                .font(.title2)
-                .fontWeight(.medium)
-
-            Text("Coming soon")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
-            Button(action: { isShowingCreateAccount = true }) {
-                Text("Add Account")
-                    .fontWeight(.medium)
-                    .foregroundStyle(Color.cyan)
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 0) {
+                    header
+                    accountsList
+                }
+                .padding(.horizontal, 20)
             }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .sheet(isPresented: $isShowingCreateAccount) {
-            CreateAccountView(accountRepository: accountRepository)
+            .overlay(alignment: .bottomTrailing) {
+                createAccountButton
+            }
+            .navigationTitle("Accounts")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarRole(.navigationStack)
+            .sheet(isPresented: $isShowingCreateAccount) {
+                CreateAccountView(accountRepository: accountRepository)
+            }
         }
     }
 }
 
+// MARK: - Header
+
+private extension AccountsView {
+    var header: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text("Existing Accounts")
+                .font(.system(size: 28, weight: .regular, design: .serif))
+                .italic()
+
+            Spacer()
+
+            Text("TOTAL: \(accountRepository.accounts.count)")
+                .font(.caption)
+                .tracking(2)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.top, 24)
+        .padding(.bottom, 16)
+    }
+}
+
+// MARK: - Accounts List
+
+private extension AccountsView {
+    var accountsList: some View {
+        VStack(spacing: 0) {
+            ForEach(accountRepository.accounts) { account in
+                accountRow(account)
+
+                Divider()
+                    .foregroundStyle(Color.gray.opacity(0.3))
+            }
+        }
+    }
+
+    func accountRow(_ account: Account) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(account.name)
+                    .font(.system(size: 20, weight: .regular, design: .serif))
+
+                Text(formattedSubtitle(for: account))
+                    .font(.caption2)
+                    .tracking(2)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            Image(systemName: "line.3.horizontal.decrease")
+                .font(.system(size: 16))
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.vertical, 18)
+    }
+
+    func formattedSubtitle(for account: Account) -> String {
+        let parts = account.subtitle.split(separator: " ", maxSplits: 1)
+        if parts.count == 2 {
+            return "\(parts[0].uppercased()) • \(parts[1].uppercased())"
+        }
+        return account.subtitle.uppercased()
+    }
+}
+
+// MARK: - Create Account Button
+
+private extension AccountsView {
+    var createAccountButton: some View {
+        Button(action: { isShowingCreateAccount = true }) {
+            Image(systemName: "plus")
+                .font(.title2)
+                .fontWeight(.semibold)
+                .foregroundStyle(.white)
+                .frame(width: 60, height: 60)
+                .background(Color.brandDarkGreen)
+                .clipShape(Circle())
+                .shadow(color: Color.brandDarkGreen.opacity(0.4), radius: 8, x: 0, y: 4)
+        }
+        .padding(.trailing, 20)
+        .padding(.bottom, 24)
+    }
+}
+
 #Preview {
-    AccountsView(accountRepository: InMemoryAccountRepository())
+    let repository = InMemoryAccountRepository()
+    repository.loadInitialAccounts()
+    return AccountsView(accountRepository: repository)
 }
