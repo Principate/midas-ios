@@ -14,60 +14,70 @@ struct CreateAccountView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            topBar
-            progressSection
-            stepContent
-            bottomAction
-        }
-        .background(Color(.systemBackground))
-        .onChange(of: viewModel.didSave) { _, didSave in
-            if didSave { dismiss() }
-        }
-    }
-}
-
-// MARK: - Top Bar
-
-private extension CreateAccountView {
-    var topBar: some View {
-        VStack(spacing: 0) {
-            HStack {
-                if viewModel.currentStep != .accountInfo {
-                    Button {
-                        viewModel.goToPreviousStep()
+        NavigationStack {
+            VStack(spacing: 0) {
+                goldAccentLine
+                progressSection
+                stepContent
+                bottomAction
+            }
+            .background(Color(.systemBackground))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    if viewModel.currentStep != .accountInfo {
+                        Button {
+                            viewModel.goToPreviousStep()
+                        } label: {
+                            Image(systemName: "arrow.left")
+                                .font(.body)
+                                .foregroundStyle(.primary)
+                        }
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    if viewModel.currentStep == .finalize {
+                        Button(role: .confirm) {
+                            viewModel.saveAccount()
+                        } label: {
+                            Label("Establish Account", systemImage: "checkmark")
+                        }
+                        .disabled(!viewModel.isCurrentStepValid)
+                    } else {
+                        Button(role: .confirm) {
+                            viewModel.goToNextStep()
+                        } label: {
+                            Image(systemName: "arrow.right")
+                                .font(.body)
+                                .foregroundStyle(.primary)
+                        }
+                        .disabled(!viewModel.isCurrentStepValid)
+                    }
+                }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(role: .cancel) {
+                        dismiss()
                     } label: {
-                        Image(systemName: "arrow.left")
+                        Image(systemName: "xmark")
                             .font(.body)
                             .foregroundStyle(.primary)
                     }
                 }
-
-                Spacer()
-
-                Text("EDITORIAL WEALTH")
-                    .font(.caption)
-                    .tracking(3)
-                    .foregroundStyle(.secondary)
-
-                Spacer()
-
-                Button {
-                    dismiss()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.body)
-                        .foregroundStyle(.primary)
-                }
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 12)
-
-            // Gold accent line
-            Rectangle()
-                .fill(Color(red: 0.76, green: 0.63, blue: 0.35))
-                .frame(height: 2)
+            .onChange(of: viewModel.didSave) { _, didSave in
+                if didSave { dismiss() }
+            }
         }
+    }
+}
+
+// MARK: - Gold Accent Line
+
+private extension CreateAccountView {
+    var goldAccentLine: some View {
+        Rectangle()
+            .fill(Color(red: 0.76, green: 0.63, blue: 0.35))
+            .frame(height: 2)
     }
 }
 
@@ -109,59 +119,16 @@ private extension CreateAccountView {
     var bottomAction: some View {
         VStack(spacing: 12) {
             switch viewModel.currentStep {
-            case .accountInfo, .accountSpecifics:
-                continueButton
-                if viewModel.currentStep == .accountSpecifics {
-                    saveForLaterButton
-                }
+            case .accountInfo:
+                EmptyView()
+            case .accountSpecifics:
+                saveForLaterButton
             case .finalize:
-                establishButton
                 legalDisclaimer
             }
         }
         .padding(.horizontal, 20)
         .padding(.bottom, 24)
-    }
-
-    var continueButton: some View {
-        Button {
-            viewModel.goToNextStep()
-        } label: {
-            Text("CONTINUE")
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .tracking(2)
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(Color.brandDarkGreen)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-        }
-        .disabled(!viewModel.isCurrentStepValid)
-        .opacity(viewModel.isCurrentStepValid ? 1 : 0.5)
-    }
-
-    var establishButton: some View {
-        Button {
-            viewModel.saveAccount()
-        } label: {
-            HStack(spacing: 8) {
-                Text("ESTABLISH ACCOUNT")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .tracking(2)
-                Image(systemName: "arrow.right")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-            }
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .background(Color.brandDarkGreen)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-        }
-        .disabled(!viewModel.isCurrentStepValid)
-        .opacity(viewModel.isCurrentStepValid ? 1 : 0.5)
     }
 
     var saveForLaterButton: some View {

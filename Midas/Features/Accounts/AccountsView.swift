@@ -8,22 +8,34 @@ import SwiftUI
 struct AccountsView: View {
     let accountRepository: AccountRepositoryProtocol
     @State private var isShowingCreateAccount = false
+    @State private var searchText = ""
+    @State private var isSearching = false
+    @FocusState private var isSearchFieldFocused: Bool
+
+    private var filteredAccounts: [Account] {
+        guard !searchText.isEmpty else {
+            return accountRepository.accounts
+        }
+        let query = searchText.lowercased()
+        return accountRepository.accounts.filter { account in
+            account.name.lowercased().contains(query)
+                || account.accountType.displayName.lowercased().contains(query)
+        }
+    }
 
     var body: some View {
         NavigationStack {
+            header
             ScrollView {
-                VStack(spacing: 0) {
-                    header
-                    accountsList
+                accountsList
+                    .padding(.horizontal, 20)
+            }
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    createAccountButton
                 }
-                .padding(.horizontal, 20)
             }
-            .overlay(alignment: .bottomTrailing) {
-                createAccountButton
-            }
-            .navigationTitle("Accounts")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarRole(.navigationStack)
+            .toolbarRole(.automatic)
             .fullScreenCover(isPresented: $isShowingCreateAccount) {
                 CreateAccountView(accountRepository: accountRepository)
             }
@@ -33,8 +45,8 @@ struct AccountsView: View {
 
 // MARK: - Header
 
-private extension AccountsView {
-    var header: some View {
+extension AccountsView {
+    fileprivate var header: some View {
         HStack(alignment: .firstTextBaseline) {
             Text("Existing Accounts")
                 .font(.system(size: 28, weight: .regular, design: .serif))
@@ -42,22 +54,23 @@ private extension AccountsView {
 
             Spacer()
 
-            Text("TOTAL: \(accountRepository.accounts.count)")
+            Text("TOTAL: \(filteredAccounts.count)")
                 .font(.caption)
                 .tracking(2)
                 .foregroundStyle(.secondary)
         }
         .padding(.top, 24)
         .padding(.bottom, 16)
+        .padding(.horizontal, 20)
     }
 }
 
 // MARK: - Accounts List
 
-private extension AccountsView {
-    var accountsList: some View {
+extension AccountsView {
+    fileprivate var accountsList: some View {
         VStack(spacing: 0) {
-            ForEach(accountRepository.accounts) { account in
+            ForEach(filteredAccounts) { account in
                 accountRow(account)
 
                 Divider()
@@ -66,7 +79,7 @@ private extension AccountsView {
         }
     }
 
-    func accountRow(_ account: Account) -> some View {
+    fileprivate func accountRow(_ account: Account) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text(account.name)
@@ -90,20 +103,14 @@ private extension AccountsView {
 
 // MARK: - Create Account Section
 
-private extension AccountsView {
-    var createAccountButton: some View {
+extension AccountsView {
+    fileprivate var createAccountButton: some View {
         Button(action: { isShowingCreateAccount = true }) {
             Image(systemName: "plus")
                 .font(.title2)
                 .fontWeight(.semibold)
-                .foregroundStyle(.white)
-                .frame(width: 60, height: 60)
-                .background(Color.brandDarkGreen)
-                .clipShape(Circle())
-                .shadow(color: Color.brandDarkGreen.opacity(0.4), radius: 8, x: 0, y: 4)
+                .foregroundStyle(.primary)
         }
-        .padding(.trailing, 20)
-        .padding(.bottom, 24)
     }
 }
 

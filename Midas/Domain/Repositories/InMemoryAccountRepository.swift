@@ -9,7 +9,7 @@ import Foundation
 @MainActor
 class InMemoryAccountRepository: AccountRepositoryProtocol {
     var accounts: [Account] = []
-
+    
     func loadInitialAccounts() {
         accounts = [
             Account(
@@ -35,6 +35,69 @@ class InMemoryAccountRepository: AccountRepositoryProtocol {
                 iconType: .chart
             ),
             Account(
+                name: "Bespoke Investments",
+                accountType: .creditCard,
+                currencySymbol: "$",
+                balance: 68_857.00,
+                iconType: .chart
+            ),
+            Account(
+                name: "Bespoke Investments",
+                accountType: .creditCard,
+                currencySymbol: "$",
+                balance: 68_857.00,
+                iconType: .chart
+            ),
+            Account(
+                name: "Bespoke Investments",
+                accountType: .creditCard,
+                currencySymbol: "$",
+                balance: 68_857.00,
+                iconType: .chart
+            ),
+            
+            Account(
+                name: "Bespoke Investments",
+                accountType: .creditCard,
+                currencySymbol: "$",
+                balance: 68_857.00,
+                iconType: .chart
+            ),
+            
+            Account(
+                name: "Bespoke Investments",
+                accountType: .creditCard,
+                currencySymbol: "$",
+                balance: 68_857.00,
+                iconType: .chart
+            ),
+            
+            Account(
+                name: "Bespoke Investments",
+                accountType: .creditCard,
+                currencySymbol: "$",
+                balance: 68_857.00,
+                iconType: .chart
+            ),
+            
+            Account(
+                name: "Bespoke Investments",
+                accountType: .creditCard,
+                currencySymbol: "$",
+                balance: 68_857.00,
+                iconType: .chart
+            ),
+            
+            Account(
+                name: "Bespoke Investments",
+                accountType: .creditCard,
+                currencySymbol: "$",
+                balance: 68_857.00,
+                iconType: .chart
+            ),
+            
+            
+            Account(
                 name: "London Trust",
                 accountType: .savings,
                 currencySymbol: "£",
@@ -44,7 +107,7 @@ class InMemoryAccountRepository: AccountRepositoryProtocol {
             )
         ]
     }
-
+    
     func addAccount(_ account: Account) {
         accounts.append(account)
     }

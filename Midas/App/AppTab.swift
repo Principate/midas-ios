@@ -8,12 +8,14 @@ import Foundation
 enum AppTab: String, CaseIterable {
     case portfolio
     case accounts
+    case createExpense
     case profile
 
     var title: String {
         switch self {
-        case .portfolio: return "Portfolio"
+        case .portfolio: return "Overview"
         case .accounts: return "Accounts"
+        case .createExpense: return "Add Expense"
         case .profile: return "Profile"
         }
     }
@@ -22,6 +24,7 @@ enum AppTab: String, CaseIterable {
         switch self {
         case .portfolio: return "chart.pie"
         case .accounts: return "building.columns"
+        case .createExpense: return "plus"
         case .profile: return "person"
         }
     }

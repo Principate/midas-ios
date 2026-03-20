@@ -20,8 +20,6 @@ struct HomeView: View {
                     accountsSection
                 }
             }
-            .navigationTitle("Portfolio")
-            .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 if viewModel.accounts.isEmpty {
                     viewModel.loadAccounts()
