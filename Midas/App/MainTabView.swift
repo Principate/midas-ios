@@ -4,15 +4,16 @@
 //
 
 import SwiftUI
+import ClerkKitUI
 
 struct MainTabView: View {
-    
+
     @State private var selectedTab: AppTab = .portfolio
     @State private var accountRepository = InMemoryAccountRepository()
-    
+
     var body: some View {
         TabView(selection: $selectedTab) {
-            
+
             Tab(
                 AppTab.portfolio.title,
                 systemImage: AppTab.portfolio.iconName,
@@ -20,7 +21,7 @@ struct MainTabView: View {
             ) {
                 HomeView(accountRepository: accountRepository)
             }
-            
+
             Tab(
                 AppTab.accounts.title,
                 systemImage: AppTab.accounts.iconName,
@@ -28,27 +29,27 @@ struct MainTabView: View {
             ) {
                 AccountsView(accountRepository: accountRepository)
             }
-            
+
             Tab(
                 AppTab.profile.title,
                 systemImage: AppTab.profile.iconName,
                 value: AppTab.profile,
             ) {
-                ProfileView()
+                UserProfileView()
             }
-            
+
             Tab(
                 AppTab.createExpense.title,
                 systemImage: AppTab.createExpense.iconName,
                 value: AppTab.createExpense,
-                role:.search
+                role: .search
             ) {
                 Text("Create Expense")
             }
 
         }
     }
-    
+
 }
 
 #Preview {
