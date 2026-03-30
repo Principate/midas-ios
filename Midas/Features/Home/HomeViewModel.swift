@@ -20,7 +20,7 @@ class HomeViewModel {
 
     var netWorth: Double {
         accounts.reduce(0) { total, account in
-            total + (account.usdEquivalent ?? account.balance)
+            total + account.initialBalance
         }
     }
 
@@ -38,8 +38,18 @@ class HomeViewModel {
         return (whole: "$\(whole)", decimal: decimal)
     }
 
-    func loadAccounts() {
-        accountRepository.loadInitialAccounts()
+    var isLoading = false
+    var loadError: String?
+
+    func loadAccounts() async {
+        isLoading = true
+        loadError = nil
+        do {
+            try await accountRepository.loadInitialAccounts()
+        } catch {
+            loadError = error.localizedDescription
+        }
+        isLoading = false
     }
 
     func formattedBalance(for account: Account) -> String {
@@ -48,18 +58,7 @@ class HomeViewModel {
         formatter.numberStyle = .decimal
         formatter.minimumFractionDigits = 2
         formatter.maximumFractionDigits = 2
-        let formatted = formatter.string(from: NSNumber(value: account.balance)) ?? "0.00"
+        let formatted = formatter.string(from: NSNumber(value: account.initialBalance)) ?? "0.00"
         return "\(account.currencySymbol)\(formatted)"
-    }
-
-    func formattedUSDEquivalent(for account: Account) -> String? {
-        guard let usdEquivalent = account.usdEquivalent else { return nil }
-        let formatter = NumberFormatter()
-        formatter.locale = Locale(identifier: "en_US")
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 2
-        let formatted = formatter.string(from: NSNumber(value: usdEquivalent)) ?? "0.00"
-        return "~$\(formatted)"
     }
 }

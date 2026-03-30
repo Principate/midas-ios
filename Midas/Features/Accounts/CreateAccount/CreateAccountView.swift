@@ -38,11 +38,15 @@ struct CreateAccountView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     if viewModel.currentStep == .finalize {
                         Button(role: .confirm) {
-                            viewModel.saveAccount()
+                            Task { await viewModel.saveAccount() }
                         } label: {
-                            Label("Establish Account", systemImage: "checkmark")
+                            if viewModel.isSaving {
+                                ProgressView()
+                            } else {
+                                Label("Establish Account", systemImage: "checkmark")
+                            }
                         }
-                        .disabled(!viewModel.isCurrentStepValid)
+                        .disabled(!viewModel.isCurrentStepValid || viewModel.isSaving)
                     } else {
                         Button(role: .confirm) {
                             viewModel.goToNextStep()
@@ -66,6 +70,16 @@ struct CreateAccountView: View {
             }
             .onChange(of: viewModel.didSave) { _, didSave in
                 if didSave { dismiss() }
+            }
+            .alert("Error", isPresented: Binding(
+                get: { viewModel.saveError != nil },
+                set: { if !$0 { viewModel.saveError = nil } }
+            )) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                if let error = viewModel.saveError {
+                    Text(error)
+                }
             }
         }
     }

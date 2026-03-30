@@ -15,10 +15,10 @@ struct HomeViewModelTests {
         #expect(viewModel.accounts.isEmpty)
     }
 
-    @Test func test_loadAccounts_shouldDelegateToRepository() {
+    @Test func test_loadAccounts_shouldDelegateToRepository() async {
         let repository = MockAccountRepository()
         let viewModel = HomeViewModel(accountRepository: repository)
-        viewModel.loadAccounts()
+        await viewModel.loadAccounts()
         #expect(repository.loadInitialAccountsCallCount == 1)
     }
 
@@ -27,10 +27,11 @@ struct HomeViewModelTests {
         repository.accounts = [
             Account(
                 name: "Test",
+                currency: "USD",
+                initialBalance: 1000.00,
+                icon: AccountIcon.bank.rawValue,
                 accountType: .checking,
-                currencySymbol: "$",
-                balance: 1000.00,
-                iconType: .bank
+                info: .checking(minimumAmount: 0, interestRate: 0, overdraftLimit: 0)
             )
         ]
         let viewModel = HomeViewModel(accountRepository: repository)
@@ -44,35 +45,20 @@ struct HomeViewModelTests {
         #expect(viewModel.netWorth == 0)
     }
 
-    @Test func test_netWorth_usesUSDEquivalentWhenAvailable() {
+    @Test func test_netWorth_usesInitialBalance() {
         let repository = MockAccountRepository()
         repository.accounts = [
             Account(
                 name: "Test",
+                currency: "EUR",
+                initialBalance: 110.00,
+                icon: AccountIcon.euro.rawValue,
                 accountType: .savings,
-                currencySymbol: "€",
-                balance: 100.00,
-                usdEquivalent: 110.00,
-                iconType: .euro
+                info: .savings(minimumAmount: 0, interestRate: 0)
             )
         ]
         let viewModel = HomeViewModel(accountRepository: repository)
         #expect(viewModel.netWorth == 110.00)
-    }
-
-    @Test func test_netWorth_usesBalanceWhenNoUSDEquivalent() {
-        let repository = MockAccountRepository()
-        repository.accounts = [
-            Account(
-                name: "Test",
-                accountType: .checking,
-                currencySymbol: "$",
-                balance: 500.00,
-                iconType: .bank
-            )
-        ]
-        let viewModel = HomeViewModel(accountRepository: repository)
-        #expect(viewModel.netWorth == 500.00)
     }
 
     @Test func test_formattedNetWorth_shouldSplitWholeAndDecimal() {
@@ -80,10 +66,11 @@ struct HomeViewModelTests {
         repository.accounts = [
             Account(
                 name: "Test",
+                currency: "USD",
+                initialBalance: 1234.56,
+                icon: AccountIcon.bank.rawValue,
                 accountType: .checking,
-                currencySymbol: "$",
-                balance: 1234.56,
-                iconType: .bank
+                info: .checking(minimumAmount: 0, interestRate: 0, overdraftLimit: 0)
             )
         ]
         let viewModel = HomeViewModel(accountRepository: repository)
@@ -97,40 +84,13 @@ struct HomeViewModelTests {
         let viewModel = HomeViewModel(accountRepository: repository)
         let account = Account(
             name: "Euro Account",
+            currency: "EUR",
+            initialBalance: 120_500.00,
+            icon: AccountIcon.euro.rawValue,
             accountType: .savings,
-            currencySymbol: "€",
-            balance: 120_500.00,
-            iconType: .euro
+            info: .savings(minimumAmount: 0, interestRate: 0)
         )
         let formatted = viewModel.formattedBalance(for: account)
         #expect(formatted == "€120,500.00")
-    }
-
-    @Test func test_formattedUSDEquivalent_shouldReturnNilWhenNoEquivalent() {
-        let repository = MockAccountRepository()
-        let viewModel = HomeViewModel(accountRepository: repository)
-        let account = Account(
-            name: "USD Account",
-            accountType: .checking,
-            currencySymbol: "$",
-            balance: 1000.00,
-            iconType: .bank
-        )
-        #expect(viewModel.formattedUSDEquivalent(for: account) == nil)
-    }
-
-    @Test func test_formattedUSDEquivalent_shouldFormatWhenPresent() {
-        let repository = MockAccountRepository()
-        let viewModel = HomeViewModel(accountRepository: repository)
-        let account = Account(
-            name: "Euro Account",
-            accountType: .savings,
-            currencySymbol: "€",
-            balance: 120_500.00,
-            usdEquivalent: 131_245.50,
-            iconType: .euro
-        )
-        let formatted = viewModel.formattedUSDEquivalent(for: account)
-        #expect(formatted == "~$131,245.50")
     }
 }

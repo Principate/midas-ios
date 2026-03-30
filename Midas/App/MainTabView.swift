@@ -8,8 +8,8 @@ import ClerkKitUI
 
 struct MainTabView: View {
 
+    let accountRepository: AccountRepositoryProtocol
     @State private var selectedTab: AppTab = .portfolio
-    @State private var accountRepository = InMemoryAccountRepository()
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -53,5 +53,5 @@ struct MainTabView: View {
 }
 
 #Preview {
-    MainTabView()
+    MainTabView(accountRepository: InMemoryAccountRepository())
 }

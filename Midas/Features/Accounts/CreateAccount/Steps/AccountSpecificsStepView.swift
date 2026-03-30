@@ -15,16 +15,17 @@ struct AccountSpecificsStepView: View {
                 Text("Account Specifics")
                     .font(.system(size: 32, weight: .regular, design: .serif))
 
-                Text(subtitleText)
+                Text("Configure the operational parameters for your \(viewModel.accountType.displayName.lowercased()) account.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
 
-                // Type-specific fields
                 switch viewModel.accountType {
                 case .creditCard:
                     creditCardFields
-                case .savings, .checking:
-                    savingsCheckingFields
+                case .savings:
+                    savingsFields
+                case .checking:
+                    checkingFields
                 }
 
                 Spacer(minLength: 24)
@@ -34,127 +35,81 @@ struct AccountSpecificsStepView: View {
         }
     }
 
-    private var subtitleText: String {
-        switch viewModel.accountType {
-        case .creditCard:
-            return "Please refine the operational details for your new credit portfolio."
-        case .savings:
-            return "Configure the parameters for your new savings account."
-        case .checking:
-            return "Configure the parameters for your new checking account."
-        }
-    }
-
     // MARK: - Credit Card Fields
 
     private var creditCardFields: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            // Credit Limit
-            VStack(alignment: .leading, spacing: 8) {
-                Text("CREDIT LIMIT")
-                    .font(.caption2)
-                    .tracking(2)
-                    .foregroundStyle(.secondary)
+        Group {
+            fieldSection(title: "CREDIT LIMIT", prefix: CurrencyOption.symbol(forCode: viewModel.currency), text: $viewModel.creditLimitString, placeholder: "0.00", hint: "The maximum credit limit for this card.", keyboardType: .decimalPad)
 
-                HStack(spacing: 4) {
-                    Text("$")
-                        .foregroundStyle(.secondary)
-                    TextField("0.00", text: $viewModel.creditLimitString)
-                        .keyboardType(.decimalPad)
-                }
-                .font(.body)
-                .padding(.vertical, 12)
-                .padding(.horizontal, 16)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                )
-            }
+            fieldSection(title: "DUE DATE (DAY OF MONTH)", text: $viewModel.dueDateString, placeholder: "1", hint: "The day of the month the payment is due (1–31).", keyboardType: .numberPad)
 
-            // Statement Close Date
-            VStack(alignment: .leading, spacing: 8) {
-                Text("STATEMENT CLOSE DATE")
-                    .font(.caption2)
-                    .tracking(2)
-                    .foregroundStyle(.secondary)
-
-                DatePicker(
-                    "",
-                    selection: $viewModel.statementCloseDate,
-                    displayedComponents: .date
-                )
-                .labelsHidden()
-                .datePickerStyle(.compact)
-                .padding(.vertical, 8)
-                .padding(.horizontal, 16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                )
-            }
-
-            // Payment Due Date
-            VStack(alignment: .leading, spacing: 8) {
-                Text("PAYMENT DUE DATE")
-                    .font(.caption2)
-                    .tracking(2)
-                    .foregroundStyle(.secondary)
-
-                DatePicker(
-                    "",
-                    selection: $viewModel.paymentDueDate,
-                    displayedComponents: .date
-                )
-                .labelsHidden()
-                .datePickerStyle(.compact)
-                .padding(.vertical, 8)
-                .padding(.horizontal, 16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                )
-            }
+            fieldSection(title: "CLOSE DATE (DAY OF MONTH)", text: $viewModel.closeDateString, placeholder: "1", hint: "The day of the month the billing cycle closes (1–31).", keyboardType: .numberPad)
         }
     }
 
-    // MARK: - Savings / Checking Fields
+    // MARK: - Savings Fields
 
-    private var savingsCheckingFields: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Account Requirements")
-                .font(.system(size: 22, weight: .regular, design: .serif))
+    private var savingsFields: some View {
+        Group {
+            fieldSection(title: "MINIMUM AMOUNT", prefix: CurrencyOption.symbol(forCode: viewModel.currency), text: $viewModel.minimumAmountString, placeholder: "0.00", hint: "Leave as 0 if no minimum is required.", keyboardType: .decimalPad)
 
-            VStack(alignment: .leading, spacing: 8) {
-                Text("MINIMUM BALANCE REQUIREMENT")
-                    .font(.caption2)
-                    .tracking(2)
-                    .foregroundStyle(.secondary)
+            fieldSection(title: "INTEREST RATE", text: $viewModel.interestRateString, placeholder: "0.00", suffix: "%", hint: "Annual percentage rate, if applicable.", keyboardType: .decimalPad)
+        }
+    }
 
-                HStack(spacing: 4) {
-                    Text("$")
+    // MARK: - Checking Fields
+
+    private var checkingFields: some View {
+        Group {
+            fieldSection(title: "MINIMUM AMOUNT", prefix: CurrencyOption.symbol(forCode: viewModel.currency), text: $viewModel.minimumAmountString, placeholder: "0.00", hint: "Leave as 0 if no minimum is required.", keyboardType: .decimalPad)
+
+            fieldSection(title: "INTEREST RATE", text: $viewModel.interestRateString, placeholder: "0.00", suffix: "%", hint: "Annual percentage rate, if applicable.", keyboardType: .decimalPad)
+
+            fieldSection(title: "OVERDRAFT LIMIT", prefix: CurrencyOption.symbol(forCode: viewModel.currency), text: $viewModel.overdraftLimitString, placeholder: "0.00", hint: "Leave as 0 if overdraft protection is not enabled.", keyboardType: .decimalPad)
+        }
+    }
+
+    // MARK: - Reusable Field
+
+    private func fieldSection(
+        title: String,
+        prefix: String? = nil,
+        text: Binding<String>,
+        placeholder: String,
+        suffix: String? = nil,
+        hint: String,
+        keyboardType: UIKeyboardType
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.caption2)
+                .tracking(2)
+                .foregroundStyle(.secondary)
+
+            HStack(spacing: 4) {
+                if let prefix {
+                    Text(prefix)
                         .foregroundStyle(.secondary)
-                    TextField("2,500.00", text: $viewModel.minimumBalanceString)
-                        .keyboardType(.decimalPad)
-                        .onChange(of: viewModel.minimumBalanceString) { _, newValue in
-                            viewModel.hasMinimumBalanceRequirement =
-                                !newValue.trimmingCharacters(in: .whitespaces).isEmpty
-                        }
                 }
-                .font(.body)
-                .padding(.vertical, 12)
-                .padding(.horizontal, 16)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                )
-
-                Text("Leave blank if no minimum is required for this account type.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .italic()
+                TextField(placeholder, text: text)
+                    .keyboardType(keyboardType)
+                if let suffix {
+                    Text(suffix)
+                        .foregroundStyle(.secondary)
+                }
             }
+            .font(.body)
+            .padding(.vertical, 12)
+            .padding(.horizontal, 16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+            )
+
+            Text(hint)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .italic()
         }
     }
 }
@@ -163,7 +118,7 @@ struct AccountSpecificsStepView: View {
     AccountSpecificsStepView(
         viewModel: {
             let vm = CreateAccountViewModel(accountRepository: InMemoryAccountRepository())
-            vm.accountType = .creditCard
+            vm.accountType = .checking
             return vm
         }()
     )

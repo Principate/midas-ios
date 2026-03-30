@@ -58,9 +58,9 @@ struct AccountInfoStepView: View {
                         .tracking(2)
                         .foregroundStyle(.secondary)
 
-                    Picker("Currency", selection: $viewModel.currencySymbol) {
+                    Picker("Currency", selection: $viewModel.currency) {
                         ForEach(CurrencyOption.allOptions) { option in
-                            Text("\(option.code) (\(option.symbol))").tag(option.symbol)
+                            Text("\(option.code) (\(option.symbol))").tag(option.code)
                         }
                     }
                     .pickerStyle(.menu)
@@ -81,8 +81,22 @@ struct AccountInfoStepView: View {
                         .foregroundStyle(.secondary)
 
                     HStack(spacing: 12) {
-                        ForEach(AccountIconType.allCases, id: \.self) { iconType in
-                            iconButton(iconType)
+                        ForEach(AccountIcon.allCases, id: \.self) { accountIcon in
+                            iconButton(accountIcon)
+                        }
+                    }
+                }
+
+                // Color
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("ACCOUNT COLOR")
+                        .font(.caption2)
+                        .tracking(2)
+                        .foregroundStyle(.secondary)
+
+                    HStack(spacing: 12) {
+                        ForEach(AccountColor.allCases, id: \.self) { accountColor in
+                            colorButton(accountColor)
                         }
                     }
                 }
@@ -94,11 +108,11 @@ struct AccountInfoStepView: View {
         }
     }
 
-    private func iconButton(_ iconType: AccountIconType) -> some View {
-        let isSelected = viewModel.iconType == iconType
+    private func iconButton(_ accountIcon: AccountIcon) -> some View {
+        let isSelected = viewModel.icon == accountIcon
 
         return Button {
-            viewModel.iconType = iconType
+            viewModel.icon = accountIcon
         } label: {
             ZStack {
                 RoundedRectangle(cornerRadius: 12)
@@ -112,10 +126,33 @@ struct AccountInfoStepView: View {
                     )
                     .frame(width: 56, height: 56)
 
-                Image(systemName: iconType.systemImageName)
+                Image(systemName: accountIcon.systemImageName)
                     .font(.system(size: 20))
                     .foregroundStyle(isSelected ? .white : .primary)
             }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func colorButton(_ accountColor: AccountColor) -> some View {
+        let isSelected = viewModel.color == accountColor.rawValue
+        let displayColor = Color(hex: accountColor.rawValue) ?? .black
+
+        return Button {
+            viewModel.color = accountColor.rawValue
+        } label: {
+            ZStack {
+                Circle()
+                    .fill(displayColor)
+                    .frame(width: 36, height: 36)
+
+                if isSelected {
+                    Circle()
+                        .strokeBorder(Color.primary, lineWidth: 2)
+                        .frame(width: 44, height: 44)
+                }
+            }
+            .frame(width: 44, height: 44)
         }
         .buttonStyle(.plain)
     }

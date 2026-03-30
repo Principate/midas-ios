@@ -20,9 +20,9 @@ struct HomeView: View {
                     accountsSection
                 }
             }
-            .onAppear {
+            .task {
                 if viewModel.accounts.isEmpty {
-                    viewModel.loadAccounts()
+                    await viewModel.loadAccounts()
                 }
             }
         }
@@ -104,37 +104,25 @@ private extension HomeView {
 
             Spacer()
 
-            VStack(alignment: .trailing, spacing: 2) {
-                Text(viewModel.formattedBalance(for: account))
-                    .font(.title3)
-                    .fontDesign(.serif)
-
-                if let usdEquivalent = viewModel.formattedUSDEquivalent(for: account) {
-                    Text(usdEquivalent)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
+            Text(viewModel.formattedBalance(for: account))
+                .font(.title3)
+                .fontDesign(.serif)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
     }
 
     func accountIcon(for account: Account) -> some View {
-        let isFilled = account.iconType == .bank
+        let accountColor = Color(hex: account.color) ?? .black
 
         return ZStack {
             RoundedRectangle(cornerRadius: 12)
-                .fill(isFilled ? Color.black : Color.clear)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .strokeBorder(Color.gray.opacity(0.3), lineWidth: isFilled ? 0 : 1)
-                )
+                .fill(accountColor)
                 .frame(width: 48, height: 48)
 
-            Image(systemName: account.iconType.systemImageName)
+            Image(systemName: account.accountIcon.systemImageName)
                 .font(.system(size: 20))
-                .foregroundStyle(isFilled ? .white : .primary)
+                .foregroundStyle(.white)
         }
     }
 }

@@ -14,57 +14,61 @@ struct InMemoryAccountRepositoryTests {
         #expect(repository.accounts.isEmpty)
     }
 
-    @Test func test_loadInitialAccounts_shouldPopulateFourAccounts() {
+    @Test func test_loadInitialAccounts_shouldPopulateFourAccounts() async throws {
         let repository = InMemoryAccountRepository()
-        repository.loadInitialAccounts()
+        try await repository.loadInitialAccounts()
         #expect(repository.accounts.count == 4)
     }
 
-    @Test func test_addAccount_shouldAppendToAccounts() {
+    @Test func test_addAccount_shouldAppendToAccounts() async throws {
         let repository = InMemoryAccountRepository()
         let account = Account(
             name: "Test Account",
+            currency: "USD",
+            initialBalance: 1000.00,
+            icon: AccountIcon.bank.rawValue,
             accountType: .checking,
-            currencySymbol: "$",
-            balance: 1000.00,
-            iconType: .bank
+            info: .checking(minimumAmount: 0, interestRate: 0, overdraftLimit: 0)
         )
-        repository.addAccount(account)
+        try await repository.addAccount(account)
         #expect(repository.accounts.count == 1)
     }
 
-    @Test func test_addAccount_shouldPreserveExistingAccounts() {
+    @Test func test_addAccount_shouldPreserveExistingAccounts() async throws {
         let repository = InMemoryAccountRepository()
-        repository.loadInitialAccounts()
+        try await repository.loadInitialAccounts()
         let account = Account(
             name: "New Account",
+            currency: "EUR",
+            initialBalance: 500.00,
+            icon: AccountIcon.euro.rawValue,
             accountType: .savings,
-            currencySymbol: "€",
-            balance: 500.00,
-            iconType: .euro
+            info: .savings(minimumAmount: 0, interestRate: 0)
         )
-        repository.addAccount(account)
+        try await repository.addAccount(account)
         #expect(repository.accounts.count == 5)
     }
 
-    @Test func test_addAccount_shouldStoreCorrectAccountData() {
+    @Test func test_addAccount_shouldStoreCorrectAccountData() async throws {
         let repository = InMemoryAccountRepository()
         let account = Account(
             name: "Savings",
+            currency: "GBP",
+            initialBalance: 25_000.00,
+            color: "#5C1A1A",
+            icon: AccountIcon.pound.rawValue,
             accountType: .savings,
-            currencySymbol: "£",
-            balance: 25_000.00,
-            usdEquivalent: 32_000.00,
-            iconType: .pound
+            info: .savings(minimumAmount: 1000, interestRate: 2.5)
         )
-        repository.addAccount(account)
+        try await repository.addAccount(account)
 
         let stored = repository.accounts.last
         #expect(stored?.name == "Savings")
         #expect(stored?.accountType == .savings)
-        #expect(stored?.currencySymbol == "£")
-        #expect(stored?.balance == 25_000.00)
-        #expect(stored?.usdEquivalent == 32_000.00)
-        #expect(stored?.iconType == .pound)
+        #expect(stored?.currency == "GBP")
+        #expect(stored?.initialBalance == 25_000.00)
+        #expect(stored?.color == "#5C1A1A")
+        #expect(stored?.icon == AccountIcon.pound.rawValue)
+        #expect(stored?.info == .savings(minimumAmount: 1000, interestRate: 2.5))
     }
 }

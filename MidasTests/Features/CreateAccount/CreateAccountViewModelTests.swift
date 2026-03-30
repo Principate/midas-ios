@@ -34,14 +34,19 @@ struct CreateAccountViewModelTests {
         #expect(vm.accountType == .checking)
     }
 
-    @Test func test_init_shouldDefaultToDollarCurrency() {
+    @Test func test_init_shouldDefaultToUSDCurrency() {
         let vm = makeViewModel()
-        #expect(vm.currencySymbol == "$")
+        #expect(vm.currency == "USD")
     }
 
     @Test func test_init_shouldDefaultToBankIcon() {
         let vm = makeViewModel()
-        #expect(vm.iconType == .bank)
+        #expect(vm.icon == .bank)
+    }
+
+    @Test func test_init_shouldDefaultToBlackColor() {
+        let vm = makeViewModel()
+        #expect(vm.color == AccountColor.black.rawValue)
     }
 
     @Test func test_init_didSaveShouldBeFalse() {
@@ -52,16 +57,6 @@ struct CreateAccountViewModelTests {
     @Test func test_init_shouldHaveEmptyBalanceString() {
         let vm = makeViewModel()
         #expect(vm.balanceString.isEmpty)
-    }
-
-    @Test func test_init_shouldHaveEmptyCreditLimitString() {
-        let vm = makeViewModel()
-        #expect(vm.creditLimitString.isEmpty)
-    }
-
-    @Test func test_init_shouldHaveNoMinimumBalanceRequirement() {
-        let vm = makeViewModel()
-        #expect(!vm.hasMinimumBalanceRequirement)
     }
 
     // MARK: - Step 1 Validation
@@ -84,98 +79,69 @@ struct CreateAccountViewModelTests {
         #expect(vm.isStep1Valid)
     }
 
+    // MARK: - Step 2 Validation (Checking)
+
+    @Test func test_isStep2Valid_checking_whenAllFieldsEmpty_shouldBeTrue() {
+        let vm = makeViewModel()
+        vm.accountType = .checking
+        #expect(vm.isStep2Valid)
+    }
+
+    @Test func test_isStep2Valid_checking_whenOverdraftLimitIsInvalid_shouldBeFalse() {
+        let vm = makeViewModel()
+        vm.accountType = .checking
+        vm.overdraftLimitString = "xyz"
+        #expect(!vm.isStep2Valid)
+    }
+
+    @Test func test_isStep2Valid_checking_whenMinimumAmountIsInvalid_shouldBeFalse() {
+        let vm = makeViewModel()
+        vm.accountType = .checking
+        vm.minimumAmountString = "abc"
+        #expect(!vm.isStep2Valid)
+    }
+
     // MARK: - Step 2 Validation (Credit Card)
 
-    @Test func test_isStep2Valid_whenCreditCard_andCreditLimitIsEmpty_shouldBeFalse() {
-        let vm = makeViewModel()
-        vm.accountType = .creditCard
-        vm.creditLimitString = ""
-        #expect(!vm.isStep2Valid)
-    }
-
-    @Test func test_isStep2Valid_whenCreditCard_andCreditLimitIsZero_shouldBeFalse() {
-        let vm = makeViewModel()
-        vm.accountType = .creditCard
-        vm.creditLimitString = "0"
-        #expect(!vm.isStep2Valid)
-    }
-
-    @Test func test_isStep2Valid_whenCreditCard_andCreditLimitIsNegative_shouldBeFalse() {
-        let vm = makeViewModel()
-        vm.accountType = .creditCard
-        vm.creditLimitString = "-500"
-        #expect(!vm.isStep2Valid)
-    }
-
-    @Test func test_isStep2Valid_whenCreditCard_andCreditLimitIsNotNumeric_shouldBeFalse() {
-        let vm = makeViewModel()
-        vm.accountType = .creditCard
-        vm.creditLimitString = "abc"
-        #expect(!vm.isStep2Valid)
-    }
-
-    @Test func test_isStep2Valid_whenCreditCard_andCreditLimitIsPositive_shouldBeTrue() {
+    @Test func test_isStep2Valid_creditCard_whenAllFieldsValid_shouldBeTrue() {
         let vm = makeViewModel()
         vm.accountType = .creditCard
         vm.creditLimitString = "5000"
+        vm.dueDateString = "15"
+        vm.closeDateString = "1"
         #expect(vm.isStep2Valid)
+    }
+
+    @Test func test_isStep2Valid_creditCard_whenLimitMissing_shouldBeFalse() {
+        let vm = makeViewModel()
+        vm.accountType = .creditCard
+        vm.creditLimitString = ""
+        vm.dueDateString = "15"
+        vm.closeDateString = "1"
+        #expect(!vm.isStep2Valid)
+    }
+
+    @Test func test_isStep2Valid_creditCard_whenDueDateOutOfRange_shouldBeFalse() {
+        let vm = makeViewModel()
+        vm.accountType = .creditCard
+        vm.creditLimitString = "5000"
+        vm.dueDateString = "32"
+        vm.closeDateString = "1"
+        #expect(!vm.isStep2Valid)
     }
 
     // MARK: - Step 2 Validation (Savings)
 
-    @Test func test_isStep2Valid_whenSavings_noMinimumBalance_shouldBeTrue() {
+    @Test func test_isStep2Valid_savings_whenAllFieldsEmpty_shouldBeTrue() {
         let vm = makeViewModel()
         vm.accountType = .savings
-        vm.hasMinimumBalanceRequirement = false
         #expect(vm.isStep2Valid)
     }
 
-    @Test func test_isStep2Valid_whenSavings_withMinimumBalance_andValidAmount_shouldBeTrue() {
+    @Test func test_isStep2Valid_savings_whenInterestRateIsInvalid_shouldBeFalse() {
         let vm = makeViewModel()
         vm.accountType = .savings
-        vm.hasMinimumBalanceRequirement = true
-        vm.minimumBalanceString = "2500"
-        #expect(vm.isStep2Valid)
-    }
-
-    @Test func test_isStep2Valid_whenSavings_withMinimumBalance_andInvalidAmount_shouldBeFalse() {
-        let vm = makeViewModel()
-        vm.accountType = .savings
-        vm.hasMinimumBalanceRequirement = true
-        vm.minimumBalanceString = "abc"
-        #expect(!vm.isStep2Valid)
-    }
-
-    @Test func test_isStep2Valid_whenSavings_withMinimumBalance_andNegativeAmount_shouldBeFalse() {
-        let vm = makeViewModel()
-        vm.accountType = .savings
-        vm.hasMinimumBalanceRequirement = true
-        vm.minimumBalanceString = "-100"
-        #expect(!vm.isStep2Valid)
-    }
-
-    // MARK: - Step 2 Validation (Checking)
-
-    @Test func test_isStep2Valid_whenChecking_noMinimumBalance_shouldBeTrue() {
-        let vm = makeViewModel()
-        vm.accountType = .checking
-        vm.hasMinimumBalanceRequirement = false
-        #expect(vm.isStep2Valid)
-    }
-
-    @Test func test_isStep2Valid_whenChecking_withMinimumBalance_andValidAmount_shouldBeTrue() {
-        let vm = makeViewModel()
-        vm.accountType = .checking
-        vm.hasMinimumBalanceRequirement = true
-        vm.minimumBalanceString = "1000"
-        #expect(vm.isStep2Valid)
-    }
-
-    @Test func test_isStep2Valid_whenChecking_withMinimumBalance_andInvalidAmount_shouldBeFalse() {
-        let vm = makeViewModel()
-        vm.accountType = .checking
-        vm.hasMinimumBalanceRequirement = true
-        vm.minimumBalanceString = "not a number"
+        vm.interestRateString = "abc"
         #expect(!vm.isStep2Valid)
     }
 
@@ -222,16 +188,6 @@ struct CreateAccountViewModelTests {
         #expect(vm.isCurrentStepValid)
     }
 
-    @Test func test_isCurrentStepValid_whenOnStep2_shouldUseStep2Validation() {
-        let vm = makeViewModel()
-        vm.currentStep = .accountSpecifics
-        vm.accountType = .creditCard
-        vm.creditLimitString = ""
-        #expect(!vm.isCurrentStepValid)
-        vm.creditLimitString = "5000"
-        #expect(vm.isCurrentStepValid)
-    }
-
     @Test func test_isCurrentStepValid_whenOnStep3_shouldUseStep3Validation() {
         let vm = makeViewModel()
         vm.currentStep = .finalize
@@ -261,18 +217,6 @@ struct CreateAccountViewModelTests {
         #expect(vm.parsedBalance == nil)
     }
 
-    @Test func test_parsedCreditLimit_whenValid_shouldReturnDouble() {
-        let vm = makeViewModel()
-        vm.creditLimitString = "5000"
-        #expect(vm.parsedCreditLimit == 5000)
-    }
-
-    @Test func test_parsedMinimumBalance_whenValid_shouldReturnDouble() {
-        let vm = makeViewModel()
-        vm.minimumBalanceString = "2500"
-        #expect(vm.parsedMinimumBalance == 2500)
-    }
-
     // MARK: - Navigation
 
     @Test func test_goToNextStep_fromStep1_whenValid_shouldAdvanceToStep2() {
@@ -292,19 +236,8 @@ struct CreateAccountViewModelTests {
     @Test func test_goToNextStep_fromStep2_whenValid_shouldAdvanceToStep3() {
         let vm = makeViewModel()
         vm.currentStep = .accountSpecifics
-        vm.accountType = .checking
-        vm.hasMinimumBalanceRequirement = false
         vm.goToNextStep()
         #expect(vm.currentStep == .finalize)
-    }
-
-    @Test func test_goToNextStep_fromStep2_whenInvalid_shouldStayOnStep2() {
-        let vm = makeViewModel()
-        vm.currentStep = .accountSpecifics
-        vm.accountType = .creditCard
-        vm.creditLimitString = ""
-        vm.goToNextStep()
-        #expect(vm.currentStep == .accountSpecifics)
     }
 
     @Test func test_goToNextStep_fromStep3_shouldNotAdvance() {
@@ -336,253 +269,193 @@ struct CreateAccountViewModelTests {
         #expect(vm.currentStep == .accountInfo)
     }
 
-    // MARK: - Save Account (Checking)
+    // MARK: - Save Account (Basic)
 
-    @Test func test_saveAccount_withChecking_shouldCallRepository() {
+    @Test func test_saveAccount_shouldCallRepository() async {
         let repo = MockAccountRepository()
         let vm = makeViewModel(repository: repo)
         vm.name = "My Checking"
         vm.accountType = .checking
-        vm.currencySymbol = "$"
         vm.balanceString = "1000"
-        vm.saveAccount()
+        await vm.saveAccount()
         #expect(repo.addAccountCallCount == 1)
     }
 
-    @Test func test_saveAccount_withChecking_shouldCreateAccountWithCorrectType() {
+    @Test func test_saveAccount_shouldCreateAccountWithCorrectType() async {
         let repo = MockAccountRepository()
         let vm = makeViewModel(repository: repo)
         vm.name = "My Checking"
         vm.accountType = .checking
         vm.balanceString = "1000"
-        vm.saveAccount()
+        await vm.saveAccount()
         #expect(repo.lastAddedAccount?.accountType == .checking)
     }
 
-    @Test func test_saveAccount_withChecking_shouldCreateAccountWithCorrectName() {
+    @Test func test_saveAccount_shouldCreateAccountWithCorrectName() async {
         let repo = MockAccountRepository()
         let vm = makeViewModel(repository: repo)
         vm.name = "My Checking"
         vm.accountType = .checking
         vm.balanceString = "1000"
-        vm.saveAccount()
+        await vm.saveAccount()
         #expect(repo.lastAddedAccount?.name == "My Checking")
     }
 
-    @Test func test_saveAccount_shouldTrimWhitespaceFromName() {
+    @Test func test_saveAccount_shouldTrimWhitespaceFromName() async {
         let repo = MockAccountRepository()
         let vm = makeViewModel(repository: repo)
         vm.name = "  My Checking  "
         vm.accountType = .checking
         vm.balanceString = "1000"
-        vm.saveAccount()
+        await vm.saveAccount()
         #expect(repo.lastAddedAccount?.name == "My Checking")
     }
 
-    @Test func test_saveAccount_shouldSetDidSaveToTrue() {
+    @Test func test_saveAccount_shouldSetDidSaveToTrue() async {
         let repo = MockAccountRepository()
         let vm = makeViewModel(repository: repo)
         vm.name = "Test"
         vm.accountType = .checking
         vm.balanceString = "0"
-        vm.saveAccount()
+        await vm.saveAccount()
         #expect(vm.didSave)
     }
 
-    @Test func test_saveAccount_shouldCreateAccountWithCorrectBalance() {
+    @Test func test_saveAccount_shouldCreateAccountWithCorrectBalance() async {
         let repo = MockAccountRepository()
         let vm = makeViewModel(repository: repo)
         vm.name = "Test"
         vm.accountType = .checking
         vm.balanceString = "5000.75"
-        vm.saveAccount()
-        #expect(repo.lastAddedAccount?.balance == 5000.75)
+        await vm.saveAccount()
+        #expect(repo.lastAddedAccount?.initialBalance == 5000.75)
     }
 
-    @Test func test_saveAccount_shouldCreateAccountWithCorrectCurrency() {
+    @Test func test_saveAccount_shouldCreateAccountWithCorrectCurrency() async {
         let repo = MockAccountRepository()
         let vm = makeViewModel(repository: repo)
         vm.name = "Euro Fund"
         vm.accountType = .savings
-        vm.currencySymbol = "€"
+        vm.currency = "EUR"
         vm.balanceString = "3000"
-        vm.saveAccount()
-        #expect(repo.lastAddedAccount?.currencySymbol == "€")
+        await vm.saveAccount()
+        #expect(repo.lastAddedAccount?.currency == "EUR")
     }
 
-    @Test func test_saveAccount_shouldCreateAccountWithCorrectIcon() {
+    @Test func test_saveAccount_shouldCreateAccountWithCorrectIcon() async {
         let repo = MockAccountRepository()
         let vm = makeViewModel(repository: repo)
         vm.name = "Euro Fund"
         vm.accountType = .savings
         vm.balanceString = "3000"
-        vm.iconType = .euro
-        vm.saveAccount()
-        #expect(repo.lastAddedAccount?.iconType == .euro)
+        vm.icon = .euro
+        await vm.saveAccount()
+        #expect(repo.lastAddedAccount?.icon == AccountIcon.euro.rawValue)
     }
 
-    // MARK: - Save Account (Credit Card with Type Details)
-
-    @Test func test_saveAccount_withCreditCard_shouldIncludeCreditLimit() {
+    @Test func test_saveAccount_shouldCreateAccountWithCorrectColor() async {
         let repo = MockAccountRepository()
         let vm = makeViewModel(repository: repo)
-        vm.name = "My Card"
-        vm.accountType = .creditCard
-        vm.creditLimitString = "5000"
-        vm.balanceString = "0"
-        vm.saveAccount()
-
-        if case .creditCard(let limit, _, _) = repo.lastAddedAccount?.typeDetails {
-            #expect(limit == 5000)
-        } else {
-            Issue.record("Expected creditCard type details")
-        }
+        vm.name = "Test"
+        vm.accountType = .checking
+        vm.balanceString = "1000"
+        vm.color = AccountColor.navy.rawValue
+        await vm.saveAccount()
+        #expect(repo.lastAddedAccount?.color == "#1B2A4A")
     }
 
-    @Test func test_saveAccount_withCreditCard_shouldIncludeDates() {
-        let repo = MockAccountRepository()
-        let vm = makeViewModel(repository: repo)
-        vm.name = "My Card"
-        vm.accountType = .creditCard
-        vm.creditLimitString = "5000"
-        vm.balanceString = "0"
+    // MARK: - Save Account (Info Variants)
 
-        let closeDate = Date(timeIntervalSince1970: 1_000_000)
-        let dueDate = Date(timeIntervalSince1970: 2_000_000)
-        vm.statementCloseDate = closeDate
-        vm.paymentDueDate = dueDate
-        vm.saveAccount()
-
-        if case .creditCard(_, let storedClose, let storedDue) = repo.lastAddedAccount?.typeDetails {
-            #expect(storedClose == closeDate)
-            #expect(storedDue == dueDate)
-        } else {
-            Issue.record("Expected creditCard type details")
-        }
-    }
-
-    // MARK: - Save Account (Savings with Type Details)
-
-    @Test func test_saveAccount_withSavings_andMinBalance_shouldIncludeMinBalance() {
-        let repo = MockAccountRepository()
-        let vm = makeViewModel(repository: repo)
-        vm.name = "Savings"
-        vm.accountType = .savings
-        vm.hasMinimumBalanceRequirement = true
-        vm.minimumBalanceString = "2500"
-        vm.balanceString = "5000"
-        vm.saveAccount()
-
-        if case .savings(let minBal) = repo.lastAddedAccount?.typeDetails {
-            #expect(minBal == 2500)
-        } else {
-            Issue.record("Expected savings type details")
-        }
-    }
-
-    @Test func test_saveAccount_withSavings_andNoMinBalance_shouldHaveNilMinBalance() {
-        let repo = MockAccountRepository()
-        let vm = makeViewModel(repository: repo)
-        vm.name = "Savings"
-        vm.accountType = .savings
-        vm.hasMinimumBalanceRequirement = false
-        vm.balanceString = "5000"
-        vm.saveAccount()
-
-        if case .savings(let minBal) = repo.lastAddedAccount?.typeDetails {
-            #expect(minBal == nil)
-        } else {
-            Issue.record("Expected savings type details")
-        }
-    }
-
-    // MARK: - Save Account (Checking with Type Details)
-
-    @Test func test_saveAccount_withChecking_andMinBalance_shouldIncludeMinBalance() {
+    @Test func test_saveAccount_checking_shouldBuildCheckingInfo() async {
         let repo = MockAccountRepository()
         let vm = makeViewModel(repository: repo)
         vm.name = "Checking"
         vm.accountType = .checking
-        vm.hasMinimumBalanceRequirement = true
-        vm.minimumBalanceString = "1000"
+        vm.minimumAmountString = "500"
+        vm.interestRateString = "1.5"
+        vm.overdraftLimitString = "200"
         vm.balanceString = "5000"
-        vm.saveAccount()
-
-        if case .checking(let minBal) = repo.lastAddedAccount?.typeDetails {
-            #expect(minBal == 1000)
-        } else {
-            Issue.record("Expected checking type details")
-        }
+        await vm.saveAccount()
+        #expect(repo.lastAddedAccount?.info == .checking(minimumAmount: 500, interestRate: 1.5, overdraftLimit: 200))
     }
 
-    @Test func test_saveAccount_withChecking_andNoMinBalance_shouldHaveNilMinBalance() {
+    @Test func test_saveAccount_savings_shouldBuildSavingsInfo() async {
         let repo = MockAccountRepository()
         let vm = makeViewModel(repository: repo)
-        vm.name = "Checking"
-        vm.accountType = .checking
-        vm.hasMinimumBalanceRequirement = false
+        vm.name = "Savings"
+        vm.accountType = .savings
+        vm.minimumAmountString = "1000"
+        vm.interestRateString = "2.5"
         vm.balanceString = "5000"
-        vm.saveAccount()
+        await vm.saveAccount()
+        #expect(repo.lastAddedAccount?.info == .savings(minimumAmount: 1000, interestRate: 2.5))
+    }
 
-        if case .checking(let minBal) = repo.lastAddedAccount?.typeDetails {
-            #expect(minBal == nil)
-        } else {
-            Issue.record("Expected checking type details")
-        }
+    @Test func test_saveAccount_creditCard_shouldBuildCreditCardInfo() async {
+        let repo = MockAccountRepository()
+        let vm = makeViewModel(repository: repo)
+        vm.name = "Visa"
+        vm.accountType = .creditCard
+        vm.creditLimitString = "10000"
+        vm.dueDateString = "15"
+        vm.closeDateString = "1"
+        vm.balanceString = "3000"
+        await vm.saveAccount()
+        #expect(repo.lastAddedAccount?.info == .creditCard(limit: 10000, dueDate: 15, closeDate: 1))
+    }
+
+    @Test func test_saveAccount_changingType_shouldResetSpecificsFields() async {
+        let repo = MockAccountRepository()
+        let vm = makeViewModel(repository: repo)
+        vm.name = "Test"
+        vm.accountType = .checking
+        vm.overdraftLimitString = "500"
+        // Change to savings — overdraft should be cleared
+        vm.accountType = .savings
+        #expect(vm.overdraftLimitString.isEmpty)
+        #expect(vm.creditLimitString.isEmpty)
     }
 
     // MARK: - Save Account (Invalid State)
 
-    @Test func test_saveAccount_whenNameIsEmpty_shouldNotCallRepository() {
+    @Test func test_saveAccount_whenNameIsEmpty_shouldNotCallRepository() async {
         let repo = MockAccountRepository()
         let vm = makeViewModel(repository: repo)
         vm.name = ""
         vm.balanceString = "1000"
-        vm.saveAccount()
+        await vm.saveAccount()
         #expect(repo.addAccountCallCount == 0)
         #expect(!vm.didSave)
     }
 
-    @Test func test_saveAccount_whenBalanceIsInvalid_shouldNotCallRepository() {
+    @Test func test_saveAccount_whenBalanceIsInvalid_shouldNotCallRepository() async {
         let repo = MockAccountRepository()
         let vm = makeViewModel(repository: repo)
         vm.name = "Test"
         vm.accountType = .checking
         vm.balanceString = "abc"
-        vm.saveAccount()
-        #expect(repo.addAccountCallCount == 0)
-        #expect(!vm.didSave)
-    }
-
-    @Test func test_saveAccount_whenCreditCard_andLimitInvalid_shouldNotCallRepository() {
-        let repo = MockAccountRepository()
-        let vm = makeViewModel(repository: repo)
-        vm.name = "Card"
-        vm.accountType = .creditCard
-        vm.creditLimitString = ""
-        vm.balanceString = "0"
-        vm.saveAccount()
+        await vm.saveAccount()
         #expect(repo.addAccountCallCount == 0)
         #expect(!vm.didSave)
     }
 
     // MARK: - Currency Display
 
-    @Test func test_currencyDisplayString_whenDollar_shouldReturnUSDFormatted() {
+    @Test func test_currencyDisplayString_whenUSD_shouldReturnUSDFormatted() {
         let vm = makeViewModel()
-        vm.currencySymbol = "$"
+        vm.currency = "USD"
         #expect(vm.currencyDisplayString == "USD ($)")
     }
 
-    @Test func test_currencyDisplayString_whenEuro_shouldReturnEURFormatted() {
+    @Test func test_currencyDisplayString_whenEUR_shouldReturnEURFormatted() {
         let vm = makeViewModel()
-        vm.currencySymbol = "€"
+        vm.currency = "EUR"
         #expect(vm.currencyDisplayString == "EUR (€)")
     }
 
-    @Test func test_currencyDisplayString_whenPound_shouldReturnGBPFormatted() {
+    @Test func test_currencyDisplayString_whenGBP_shouldReturnGBPFormatted() {
         let vm = makeViewModel()
-        vm.currencySymbol = "£"
+        vm.currency = "GBP"
         #expect(vm.currencyDisplayString == "GBP (£)")
     }
 
@@ -604,5 +477,61 @@ struct CreateAccountViewModelTests {
         let vm = makeViewModel()
         vm.currentStep = .finalize
         #expect(vm.currentStep.progressPercentage == 100)
+    }
+
+    // MARK: - Save Account (Error Handling)
+
+    @Test func test_saveAccount_whenRepositoryThrows_shouldSetSaveError() async {
+        let repo = MockAccountRepository()
+        repo.addAccountError = NetworkError.httpError(statusCode: 500)
+        let vm = makeViewModel(repository: repo)
+        vm.name = "Test"
+        vm.accountType = .checking
+        vm.balanceString = "1000"
+        await vm.saveAccount()
+        #expect(vm.saveError != nil)
+        #expect(!vm.didSave)
+    }
+
+    @Test func test_saveAccount_whenRepositoryThrows_shouldNotSetDidSave() async {
+        let repo = MockAccountRepository()
+        repo.addAccountError = NetworkError.httpError(statusCode: 422)
+        let vm = makeViewModel(repository: repo)
+        vm.name = "Test"
+        vm.accountType = .checking
+        vm.balanceString = "1000"
+        await vm.saveAccount()
+        #expect(!vm.didSave)
+    }
+
+    @Test func test_saveAccount_whenSuccessful_shouldClearSaveError() async {
+        let repo = MockAccountRepository()
+        let vm = makeViewModel(repository: repo)
+        vm.name = "Test"
+        vm.accountType = .checking
+        vm.balanceString = "1000"
+        await vm.saveAccount()
+        #expect(vm.saveError == nil)
+    }
+
+    @Test func test_saveAccount_shouldSetIsSavingFalseAfterCompletion() async {
+        let repo = MockAccountRepository()
+        let vm = makeViewModel(repository: repo)
+        vm.name = "Test"
+        vm.accountType = .checking
+        vm.balanceString = "1000"
+        await vm.saveAccount()
+        #expect(!vm.isSaving)
+    }
+
+    @Test func test_saveAccount_whenRepositoryThrows_shouldSetIsSavingFalseAfterError() async {
+        let repo = MockAccountRepository()
+        repo.addAccountError = NetworkError.httpError(statusCode: 500)
+        let vm = makeViewModel(repository: repo)
+        vm.name = "Test"
+        vm.accountType = .checking
+        vm.balanceString = "1000"
+        await vm.saveAccount()
+        #expect(!vm.isSaving)
     }
 }

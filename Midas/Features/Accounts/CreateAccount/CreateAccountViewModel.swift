@@ -39,24 +39,37 @@ class CreateAccountViewModel {
 
     var currentStep: CreateAccountStep = .accountInfo
     var didSave: Bool = false
+    var isSaving: Bool = false
+    var saveError: String?
 
     // MARK: - Step 1: Account Info
 
     var name: String = ""
-    var accountType: AccountType = .checking
-    var currencySymbol: String = "$"
-    var iconType: AccountIconType = .bank
+    var accountType: AccountType = .checking {
+        didSet {
+            // Reset specifics when type changes
+            if oldValue != accountType {
+                resetSpecificsFields()
+            }
+        }
+    }
+    var currency: String = "USD"
+    var icon: AccountIcon = .bank
+    var color: String = AccountColor.black.rawValue
 
-    // MARK: - Step 2: Credit Card Fields
+    // MARK: - Step 2: Account Specifics (type-dependent)
 
+    // Credit Card fields
     var creditLimitString: String = ""
-    var statementCloseDate: Date = Date()
-    var paymentDueDate: Date = Date()
+    var dueDateString: String = ""
+    var closeDateString: String = ""
 
-    // MARK: - Step 2: Savings / Checking Fields
+    // Savings / Checking shared fields
+    var minimumAmountString: String = ""
+    var interestRateString: String = ""
 
-    var minimumBalanceString: String = ""
-    var hasMinimumBalanceRequirement: Bool = false
+    // Checking-only field
+    var overdraftLimitString: String = ""
 
     // MARK: - Step 3: Finalize
 
@@ -76,14 +89,6 @@ class CreateAccountViewModel {
         Double(balanceString)
     }
 
-    var parsedCreditLimit: Double? {
-        Double(creditLimitString)
-    }
-
-    var parsedMinimumBalance: Double? {
-        Double(minimumBalanceString)
-    }
-
     // MARK: - Step Validation
 
     var isStep1Valid: Bool {
@@ -93,13 +98,18 @@ class CreateAccountViewModel {
     var isStep2Valid: Bool {
         switch accountType {
         case .creditCard:
-            guard let limit = parsedCreditLimit, limit > 0 else { return false }
+            guard let limit = Double(creditLimitString), limit >= 0 else { return false }
+            guard let due = Int(dueDateString), (1...31).contains(due) else { return false }
+            guard let close = Int(closeDateString), (1...31).contains(close) else { return false }
             return true
-        case .savings, .checking:
-            if hasMinimumBalanceRequirement {
-                guard let minBal = parsedMinimumBalance, minBal >= 0 else { return false }
-                return true
-            }
+        case .savings:
+            if !minimumAmountString.isEmpty, Double(minimumAmountString) == nil { return false }
+            if !interestRateString.isEmpty, Double(interestRateString) == nil { return false }
+            return true
+        case .checking:
+            if !minimumAmountString.isEmpty, Double(minimumAmountString) == nil { return false }
+            if !interestRateString.isEmpty, Double(interestRateString) == nil { return false }
+            if !overdraftLimitString.isEmpty, Double(overdraftLimitString) == nil { return false }
             return true
         }
     }
@@ -145,45 +155,71 @@ class CreateAccountViewModel {
     // MARK: - Display Helpers
 
     var currencyDisplayString: String {
-        let option = CurrencyOption.allOptions.first { $0.symbol == currencySymbol }
-        return option.map { "\($0.code) (\($0.symbol))" } ?? currencySymbol
+        let option = CurrencyOption.allOptions.first { $0.code == currency }
+        return option.map { "\($0.code) (\($0.symbol))" } ?? currency
+    }
+
+    // MARK: - Build Info
+
+    private func buildAccountInfo() -> AccountInfo {
+        switch accountType {
+        case .creditCard:
+            return .creditCard(
+                limit: Double(creditLimitString) ?? 0,
+                dueDate: Int(dueDateString) ?? 1,
+                closeDate: Int(closeDateString) ?? 1
+            )
+        case .savings:
+            return .savings(
+                minimumAmount: Double(minimumAmountString) ?? 0,
+                interestRate: Double(interestRateString) ?? 0
+            )
+        case .checking:
+            return .checking(
+                minimumAmount: Double(minimumAmountString) ?? 0,
+                interestRate: Double(interestRateString) ?? 0,
+                overdraftLimit: Double(overdraftLimitString) ?? 0
+            )
+        }
     }
 
     // MARK: - Save
 
-    func saveAccount() {
+    func saveAccount() async {
         guard isStep1Valid, isStep2Valid, isStep3Valid,
               let balance = parsedBalance else { return }
 
-        let details: AccountTypeDetails
-        switch accountType {
-        case .creditCard:
-            guard let limit = parsedCreditLimit else { return }
-            details = .creditCard(
-                creditLimit: limit,
-                statementCloseDate: statementCloseDate,
-                paymentDueDate: paymentDueDate
-            )
-        case .savings:
-            details = .savings(
-                minimumBalance: hasMinimumBalanceRequirement ? parsedMinimumBalance : nil
-            )
-        case .checking:
-            details = .checking(
-                minimumBalance: hasMinimumBalanceRequirement ? parsedMinimumBalance : nil
-            )
-        }
-
         let account = Account(
             name: name.trimmingCharacters(in: .whitespaces),
+            currency: currency,
+            initialBalance: balance,
+            color: color,
+            icon: icon.rawValue,
             accountType: accountType,
-            currencySymbol: currencySymbol,
-            balance: balance,
-            iconType: iconType,
-            typeDetails: details
+            info: buildAccountInfo()
         )
 
-        accountRepository.addAccount(account)
-        didSave = true
+        isSaving = true
+        saveError = nil
+
+        do {
+            try await accountRepository.addAccount(account)
+            didSave = true
+        } catch {
+            saveError = error.localizedDescription
+        }
+
+        isSaving = false
+    }
+
+    // MARK: - Private
+
+    private func resetSpecificsFields() {
+        creditLimitString = ""
+        dueDateString = ""
+        closeDateString = ""
+        minimumAmountString = ""
+        interestRateString = ""
+        overdraftLimitString = ""
     }
 }

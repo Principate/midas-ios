@@ -17,13 +17,13 @@ struct FinalizeAccountStepView: View {
 
                 // Current Balance
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("CURRENT BALANCE")
+                    Text("INITIAL BALANCE")
                         .font(.caption2)
                         .tracking(2)
                         .foregroundStyle(.secondary)
 
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
-                        Text("$")
+                        Text(CurrencyOption.symbol(forCode: viewModel.currency))
                             .font(.system(size: 28, weight: .regular, design: .serif))
                             .foregroundStyle(.secondary)
 
@@ -62,13 +62,13 @@ struct FinalizeAccountStepView: View {
 
             // Account name row
             HStack(spacing: 12) {
-                // Icon
+                // Icon with color
                 ZStack {
                     RoundedRectangle(cornerRadius: 10)
-                        .fill(Color.black)
+                        .fill(Color(hex: viewModel.color) ?? .black)
                         .frame(width: 44, height: 44)
 
-                    Image(systemName: viewModel.iconType.systemImageName)
+                    Image(systemName: viewModel.icon.systemImageName)
                         .font(.system(size: 18))
                         .foregroundStyle(.white)
                 }
@@ -132,8 +132,8 @@ struct FinalizeAccountStepView: View {
             let vm = CreateAccountViewModel(accountRepository: InMemoryAccountRepository())
             vm.name = "Global Equities Portfolio"
             vm.accountType = .creditCard
-            vm.currencySymbol = "$"
-            vm.iconType = .bank
+            vm.currency = "USD"
+            vm.icon = .bank
             return vm
         }()
     )

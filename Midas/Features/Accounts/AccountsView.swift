@@ -115,7 +115,5 @@ extension AccountsView {
 }
 
 #Preview {
-    let repository = InMemoryAccountRepository()
-    repository.loadInitialAccounts()
-    return AccountsView(accountRepository: repository)
+    AccountsView(accountRepository: InMemoryAccountRepository())
 }
