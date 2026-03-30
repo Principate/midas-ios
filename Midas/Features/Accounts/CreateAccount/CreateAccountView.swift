@@ -104,7 +104,7 @@ private extension CreateAccountView {
             totalSteps: CreateAccountStep.allCases.count,
             percentComplete: viewModel.currentStep.progressPercentage
         )
-        .padding(.horizontal, 20)
+        .padding(.horizontal, 24)
         .padding(.top, 16)
         .padding(.bottom, 8)
     }
@@ -141,7 +141,7 @@ private extension CreateAccountView {
                 legalDisclaimer
             }
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, 24)
         .padding(.bottom, 24)
     }
 

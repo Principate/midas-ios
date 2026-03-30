@@ -46,7 +46,7 @@ struct FinalizeAccountStepView: View {
                 // Account Summary
                 accountSummary
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, 24)
             .padding(.top, 24)
         }
     }
