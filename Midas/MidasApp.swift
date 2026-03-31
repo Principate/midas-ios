@@ -18,21 +18,60 @@ struct MidasApp: App {
     )
 
     @State private var accountRepository: APIAccountRepository?
+    @State private var hasLoadedAccounts = false
+    @State private var startupLoadError: String?
 
     var body: some Scene {
         WindowGroup {
             Group {
                 if clerk.user != nil {
                     if let accountRepository {
-                        MainTabView(accountRepository: accountRepository)
+                        if hasLoadedAccounts {
+                            MainTabView(accountRepository: accountRepository)
+                        } else {
+                            VStack(spacing: 12) {
+                                ProgressView()
+                                Text("Loading accounts…")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
                     }
                 } else {
                     AuthView()
                 }
             }
+            .alert(
+                "Couldn't load accounts",
+                isPresented: Binding(
+                    get: { startupLoadError != nil },
+                    set: { if !$0 { startupLoadError = nil } }
+                )
+            ) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(startupLoadError ?? "")
+            }
             .onChange(of: clerk.user != nil, initial: true) { _, isLoggedIn in
-                if isLoggedIn, accountRepository == nil {
-                    accountRepository = makeAccountRepository()
+                if isLoggedIn {
+                    if accountRepository == nil {
+                        let repo = makeAccountRepository()
+                        accountRepository = repo
+                        hasLoadedAccounts = false
+                        Task { @MainActor in
+                            defer { hasLoadedAccounts = true }
+                            do {
+                                try await repo.loadInitialAccounts()
+                            } catch {
+                                startupLoadError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                            }
+                        }
+                    }
+                } else {
+                    // Signed out: clear state
+                    accountRepository = nil
+                    hasLoadedAccounts = false
+                    startupLoadError = nil
                 }
             }
         }
@@ -49,3 +88,4 @@ struct MidasApp: App {
         )
     }
 }
+

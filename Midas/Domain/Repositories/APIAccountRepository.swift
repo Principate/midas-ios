@@ -17,9 +17,13 @@ class APIAccountRepository: AccountRepositoryProtocol {
     }
 
     func loadInitialAccounts() async throws {
+        print("Fetching accounts....")
         let data = try await apiClient.get(path: "/api/v1/accounts")
+        print("Got response: \(data)")
         let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
         accounts = try decoder.decode([Account].self, from: data)
+        print("Decoded accounts: \(accounts)")
     }
 
     func addAccount(_ account: Account) async throws {
@@ -27,3 +31,4 @@ class APIAccountRepository: AccountRepositoryProtocol {
         accounts.append(account)
     }
 }
+

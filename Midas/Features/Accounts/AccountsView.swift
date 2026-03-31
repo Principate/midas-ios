@@ -39,6 +39,11 @@ struct AccountsView: View {
             .fullScreenCover(isPresented: $isShowingCreateAccount) {
                 CreateAccountView(accountRepository: accountRepository)
             }
+            .task {
+                if accountRepository.accounts.isEmpty {
+                    try? await accountRepository.loadInitialAccounts()
+                }
+            }
         }
     }
 }

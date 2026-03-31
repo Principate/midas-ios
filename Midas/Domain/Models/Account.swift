@@ -47,6 +47,59 @@ enum AccountType: String, CaseIterable, Equatable, Codable {
     }
 }
 
+extension AccountType {
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let raw = try container.decode(String.self)
+
+        // Normalize common variations: spaces, hyphens, case, snakeCase, camelCase
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        let lower = trimmed.lowercased()
+        let snake = lower
+            .replacingOccurrences(of: " ", with: "_")
+            .replacingOccurrences(of: "-", with: "_")
+
+        switch snake {
+        case "checking":
+            self = .checking
+            return
+        case "savings":
+            self = .savings
+            return
+        case "credit_card":
+            self = .creditCard
+            return
+        default:
+            break
+        }
+
+        // Collapse separators to catch values like "creditCard", "Credit Card", "credit-card"
+        let collapsed = lower
+            .replacingOccurrences(of: " ", with: "")
+            .replacingOccurrences(of: "-", with: "")
+            .replacingOccurrences(of: "_", with: "")
+
+        switch collapsed {
+        case "checking":
+            self = .checking
+        case "savings":
+            self = .savings
+        case "creditcard":
+            self = .creditCard
+        default:
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "Cannot initialize AccountType from invalid String value \(raw)"
+            )
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(self.rawValue)
+    }
+}
+
 // MARK: - Account Info (Circe sealed trait encoding)
 
 enum AccountInfo: Equatable {
@@ -132,6 +185,38 @@ struct Account: Identifiable, Equatable, Codable {
     let accountType: AccountType
     let info: AccountInfo
 
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case currency
+        case initialBalance
+        case color
+        case icon
+        case accountType
+        case info
+    }
+    
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+
+        // Be tolerant of id encoding: UUID or String(UUID) or missing
+        if let uuid = try? c.decode(UUID.self, forKey: .id) {
+            self.id = uuid
+        } else if let idString = try? c.decode(String.self, forKey: .id), let uuid = UUID(uuidString: idString) {
+            self.id = uuid
+        } else {
+            self.id = UUID()
+        }
+
+        self.name = try c.decode(String.self, forKey: .name)
+        self.currency = try c.decode(String.self, forKey: .currency)
+        self.initialBalance = try c.decode(Double.self, forKey: .initialBalance)
+        self.color = (try? c.decode(String.self, forKey: .color)) ?? "#000000"
+        self.icon = (try? c.decode(String.self, forKey: .icon)) ?? AccountIcon.bank.rawValue
+        self.accountType = try c.decode(AccountType.self, forKey: .accountType)
+        self.info = try c.decode(AccountInfo.self, forKey: .info)
+    }
+
     init(
         id: UUID = UUID(),
         name: String,
@@ -171,3 +256,4 @@ struct Account: Identifiable, Equatable, Codable {
         AccountIcon(rawValue: icon) ?? .bank
     }
 }
+
