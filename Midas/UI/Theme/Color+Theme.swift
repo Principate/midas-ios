@@ -7,6 +7,8 @@ import SwiftUI
 
 extension Color {
     static let brandDarkGreen = Color(red: 0.15, green: 0.22, blue: 0.17)
+    static let brandOlive = Color(red: 0.55, green: 0.50, blue: 0.30)
+    static let brandGold = Color(red: 0.76, green: 0.63, blue: 0.35)
 
     init?(hex: String) {
         var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
