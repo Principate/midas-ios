@@ -11,14 +11,31 @@ class LogExpenseViewModel {
 
     // MARK: - Dependencies
 
-    private let accountRepository: AccountRepositoryProtocol
+    let accountRepository: AccountRepositoryProtocol
     private let expenseRepository: ExpenseRepositoryProtocol
     private let parser = ExpenseInputParser()
+
+    // MARK: - Autocomplete Trigger
+
+    enum AutocompleteTrigger {
+        case account  // triggered by @
+        case category // triggered by /
+    }
+
+    private(set) var activeTrigger: AutocompleteTrigger = .account
+    private(set) var autocompleteQuery: String = ""
+    private(set) var showAutocompleteSuggestions = false
+
+    // Range in inputText that the trigger + query occupies (for replacement on selection)
+    private var triggerRange: Range<String.Index>?
 
     // MARK: - Input State
 
     var inputText: String = "" {
-        didSet { reparse() }
+        didSet {
+            detectAutocompleteTrigger()
+            reparse()
+        }
     }
 
     // MARK: - Parsed State (read-only outside)
@@ -59,6 +76,98 @@ class LogExpenseViewModel {
     ) {
         self.accountRepository = accountRepository
         self.expenseRepository = expenseRepository
+    }
+
+    // MARK: - Available Options
+
+    var availableAccounts: [Account] {
+        accountRepository.accounts
+    }
+
+    var availableCategories: [ExpenseCategory] {
+        defaultCategories + expenseRepository.categories
+    }
+
+    // MARK: - Autocomplete Filtering
+
+    var filteredAccounts: [Account] {
+        let accounts = availableAccounts
+        if autocompleteQuery.isEmpty { return accounts }
+        return accounts.filter { $0.name.localizedCaseInsensitiveContains(autocompleteQuery) }
+    }
+
+    var filteredCategories: [ExpenseCategory] {
+        let categories = availableCategories
+        if autocompleteQuery.isEmpty { return categories }
+        return categories.filter { $0.name.localizedCaseInsensitiveContains(autocompleteQuery) }
+    }
+
+    // MARK: - Trigger Detection
+
+    /// Scans inputText for the last `@` or `/` that looks like an active trigger
+    /// (i.e. at start or preceded by a space, and not yet closed by a space after the query).
+    private func detectAutocompleteTrigger() {
+        // Look for the last occurrence of @ or / that is at start or preceded by whitespace
+        let text = inputText
+
+        var bestTrigger: AutocompleteTrigger?
+        var bestStart: String.Index?
+        var bestQueryStart: String.Index?
+
+        for triggerChar: Character in ["@", "/"] {
+            // Search backwards for the last occurrence
+            if let lastIndex = text.lastIndex(of: triggerChar) {
+                // Must be at the start or preceded by whitespace
+                let isAtStart = lastIndex == text.startIndex
+                let precededBySpace = !isAtStart && text[text.index(before: lastIndex)].isWhitespace
+
+                guard isAtStart || precededBySpace else { continue }
+
+                let queryStart = text.index(after: lastIndex)
+                let querySubstring = text[queryStart...]
+
+                // If the query contains a space, the trigger is "closed" — not active
+                if querySubstring.contains(" ") { continue }
+
+                // Pick the trigger that appears latest in the string
+                if bestStart == nil || lastIndex > bestStart! {
+                    bestTrigger = triggerChar == "@" ? .account : .category
+                    bestStart = lastIndex
+                    bestQueryStart = queryStart
+                }
+            }
+        }
+
+        if let trigger = bestTrigger, let start = bestStart, let qStart = bestQueryStart {
+            activeTrigger = trigger
+            autocompleteQuery = String(text[qStart...])
+            triggerRange = start..<text.endIndex
+            showAutocompleteSuggestions = true
+        } else {
+            showAutocompleteSuggestions = false
+            autocompleteQuery = ""
+            triggerRange = nil
+        }
+    }
+
+    // MARK: - Autocomplete Selection
+
+    func selectAccountFromAutocomplete(_ account: Account) {
+        replaceAutocompleteToken(with: account.name)
+        selectedAccount = account
+    }
+
+    func selectCategoryFromAutocomplete(_ category: ExpenseCategory) {
+        replaceAutocompleteToken(with: category.name)
+        selectedCategory = category
+    }
+
+    private func replaceAutocompleteToken(with name: String) {
+        guard let range = triggerRange else { return }
+        inputText.replaceSubrange(range, with: name)
+        showAutocompleteSuggestions = false
+        autocompleteQuery = ""
+        triggerRange = nil
     }
 
     // MARK: - Effective Values

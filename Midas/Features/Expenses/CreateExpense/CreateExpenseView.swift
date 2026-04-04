@@ -13,18 +13,30 @@ struct CreateExpenseView: View {
     var onDismiss: (() -> Void)?
     
     @State private var transactionDate = Date()
+    @State private var isShowingCreateAccount = false
+    @State private var isShowingCreateCategory = false
     
     var body: some View {
-        ScrollView {
-            naturalLanguageInputSection
-            sectionDivider
+        ZStack(alignment: .top) {
+            ScrollView {
+                naturalLanguageInputSection
+                sectionDivider
+                
+                detectedEntitiesSection
+                sectionDivider
+                
+                transactionDateSection
+            }
+            .padding(.horizontal, 24)
             
-            detectedEntitiesSection
-            sectionDivider
-            
-            transactionDateSection
+            // Autocomplete overlay anchored below the text input area
+            if viewModel.showAutocompleteSuggestions {
+                autocompleteOverlay
+                    .padding(.horizontal, 24)
+                    // Offset below the input section (header + text editor area)
+                    .padding(.top, 160)
+            }
         }
-        .padding(.horizontal, 24)
         .background(Color(.systemBackground))
         .navigationTitle("Add Expense")
         .navigationBarTitleDisplayMode(.inline)
@@ -40,6 +52,12 @@ struct CreateExpenseView: View {
                 }
                 .disabled(!viewModel.canSave || viewModel.isSaving)
             }
+        }
+        .fullScreenCover(isPresented: $isShowingCreateAccount) {
+            CreateAccountView(accountRepository: viewModel.accountRepository)
+        }
+        .sheet(isPresented: $isShowingCreateCategory) {
+            CreateCategoryPlaceholderView()
         }
     }
     
@@ -85,6 +103,180 @@ struct CreateExpenseView: View {
         }
         .padding(.top, 8)
         .padding(.bottom, 16)
+    }
+    
+    // MARK: - Autocomplete Overlay
+    
+    private var autocompleteOverlay: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header showing trigger context
+            HStack(spacing: 6) {
+                Image(systemName: viewModel.activeTrigger == .account ? "building.columns" : "slider.horizontal.3")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.brandGold)
+                Text(viewModel.activeTrigger == .account ? "ACCOUNTS" : "CATEGORIES")
+                    .font(.system(size: 10, weight: .semibold))
+                    .tracking(1)
+                    .foregroundStyle(Color.brandOlive)
+                Spacer()
+                if !viewModel.autocompleteQuery.isEmpty {
+                    Text("\"\(viewModel.autocompleteQuery)\"")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            
+            Divider()
+            
+            if viewModel.activeTrigger == .account {
+                accountSuggestionsList
+            } else {
+                categorySuggestionsList
+            }
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.15), radius: 12, y: 4)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(Color.primary.opacity(0.1), lineWidth: 1)
+        )
+        .transition(.opacity.combined(with: .scale(scale: 0.95, anchor: .top)))
+    }
+    
+    private var accountSuggestionsList: some View {
+        let accounts = viewModel.filteredAccounts
+        return Group {
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    if accounts.isEmpty {
+                        Text("No matching accounts")
+                            .font(.system(size: 14))
+                            .foregroundStyle(.tertiary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 10)
+                    } else {
+                        ForEach(accounts) { account in
+                            Button {
+                                viewModel.selectAccountFromAutocomplete(account)
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: account.accountIcon.systemImageName)
+                                        .font(.system(size: 14))
+                                        .foregroundStyle(Color(hex: account.color) ?? .primary)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(account.name)
+                                            .font(.system(size: 15))
+                                            .foregroundStyle(.primary)
+                                        Text(account.formattedSubtitle)
+                                            .font(.system(size: 11))
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            
+                            if account.id != accounts.last?.id {
+                                Divider().padding(.leading, 36)
+                            }
+                        }
+                    }
+                    
+                    Divider()
+                    
+                    Button {
+                        isShowingCreateAccount = true
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "plus.circle")
+                                .font(.system(size: 14))
+                                .foregroundStyle(Color.brandGold)
+                            Text("Create New Account")
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundStyle(Color.brandGold)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .frame(maxHeight: 200)
+        }
+    }
+    
+    private var categorySuggestionsList: some View {
+        let categories = viewModel.filteredCategories
+        return Group {
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    if categories.isEmpty {
+                        Text("No matching categories")
+                            .font(.system(size: 14))
+                            .foregroundStyle(.tertiary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 10)
+                    } else {
+                        ForEach(categories) { category in
+                            Button {
+                                viewModel.selectCategoryFromAutocomplete(category)
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Circle()
+                                        .fill(Color(hex: category.color) ?? .primary)
+                                        .frame(width: 8, height: 8)
+                                    Text(category.name)
+                                        .font(.system(size: 15))
+                                        .foregroundStyle(.primary)
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 10)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            
+                            if category.id != categories.last?.id {
+                                Divider().padding(.leading, 30)
+                            }
+                        }
+                    }
+                    
+                    Divider()
+                    
+                    Button {
+                        isShowingCreateCategory = true
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "plus.circle")
+                                .font(.system(size: 14))
+                                .foregroundStyle(Color.brandGold)
+                            Text("Create New Category")
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundStyle(Color.brandGold)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .frame(maxHeight: 200)
+        }
     }
     
     // MARK: - Detected Entities Section
@@ -247,6 +439,45 @@ struct CreateExpenseView: View {
             RoundedRectangle(cornerRadius: 10)
                 .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
         )
+    }
+}
+
+// MARK: - Create Category Placeholder
+
+struct CreateCategoryPlaceholderView: View {
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 24) {
+                Image(systemName: "tag")
+                    .font(.system(size: 48))
+                    .foregroundStyle(Color.brandGold)
+                
+                Text("Create Category")
+                    .font(.system(size: 24, weight: .regular, design: .serif))
+                    .italic()
+                
+                Text("This feature is coming soon.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color(.systemBackground))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.body)
+                            .foregroundStyle(.primary)
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium])
     }
 }
 
