@@ -8,46 +8,43 @@
 import SwiftUI
 
 struct CreateExpenseView: View {
-
+    
     @State var viewModel: LogExpenseViewModel
     var onDismiss: (() -> Void)?
-
+    
     @State private var transactionDate = Date()
-
+    
     var body: some View {
-        VStack(spacing: 0) {
-            // MARK: - Navigation Bar
-            navigationBar
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    // MARK: - Natural Language Input
-                    naturalLanguageInputSection
-
-                    sectionDivider
-
-                    // MARK: - Detected Entities
-                    detectedEntitiesSection
-
-                    sectionDivider
-
-                    // MARK: - Transaction Date
-                    transactionDateSection
-                }
-                .padding(.horizontal, 24)
-            }
-
+        ScrollView {
+            naturalLanguageInputSection
+            sectionDivider
+            
+            detectedEntitiesSection
+            sectionDivider
+            
+            transactionDateSection
         }
+        .padding(.horizontal, 24)
         .background(Color(.systemBackground))
+        .navigationTitle("Add Expense")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
-                recordTransactionButton
+                Button(role: .confirm) {
+                    Task { await viewModel.saveExpense()}
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.primary)
+                }
+                .disabled(!viewModel.canSave || viewModel.isSaving)
             }
         }
     }
-
+    
     // MARK: - Navigation Bar
-
+    
     private var navigationBar: some View {
         HStack {
             Button {
@@ -57,15 +54,15 @@ struct CreateExpenseView: View {
                     .font(.system(size: 16, weight: .medium))
                     .foregroundStyle(.primary)
             }
-
+            
             Spacer()
-
+            
             Text("Editorial Wealth")
                 .font(.system(size: 17, design: .serif))
                 .italic()
-
+            
             Spacer()
-
+            
             // Placeholder for right-side icon to balance layout
             RoundedRectangle(cornerRadius: 8)
                 .fill(Color.brandGold.opacity(0.3))
@@ -74,13 +71,13 @@ struct CreateExpenseView: View {
         .padding(.horizontal, 24)
         .padding(.vertical, 12)
     }
-
+    
     // MARK: - Natural Language Input Section
-
+    
     private var naturalLanguageInputSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             sectionHeader("NATURAL LANGUAGE INPUT")
-
+            
             TextEditor(text: $viewModel.inputText)
                 .font(.system(size: 28, design: .serif))
                 .frame(minHeight: 120)
@@ -89,9 +86,9 @@ struct CreateExpenseView: View {
         .padding(.top, 8)
         .padding(.bottom, 16)
     }
-
+    
     // MARK: - Detected Entities Section
-
+    
     private var detectedEntitiesSection: some View {
         VStack(alignment: .leading, spacing: 20) {
             // Header with live parsing indicator
@@ -109,7 +106,7 @@ struct CreateExpenseView: View {
                 }
             }
             .padding(.top, 20)
-
+            
             // Value & Currency
             entityGroup("VALUE & CURRENCY") {
                 if viewModel.effectiveAmount != nil {
@@ -123,7 +120,7 @@ struct CreateExpenseView: View {
                     entityFieldPlaceholder("Enter amount...")
                 }
             }
-
+            
             // Counterparty
             entityGroup("COUNTERPARTY") {
                 let title = viewModel.parsedInput.title
@@ -133,7 +130,7 @@ struct CreateExpenseView: View {
                     isEmpty: title.isEmpty
                 )
             }
-
+            
             // Source Account
             entityGroup("SOURCE ACCOUNT") {
                 if let account = viewModel.effectiveAccount {
@@ -142,7 +139,7 @@ struct CreateExpenseView: View {
                     entityFieldPlaceholder("No account detected")
                 }
             }
-
+            
             // Classification
             entityGroup("CLASSIFICATION") {
                 if let category = viewModel.effectiveCategory {
@@ -151,7 +148,7 @@ struct CreateExpenseView: View {
                     entityFieldPlaceholder("No category detected")
                 }
             }
-
+            
             // Labels & Tags
             entityGroup("LABELS & TAGS") {
                 TagChipsView(
@@ -164,14 +161,14 @@ struct CreateExpenseView: View {
             }
         }
     }
-
+    
     // MARK: - Transaction Date Section
-
+    
     private var transactionDateSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             sectionHeader("TRANSACTION DATE")
                 .padding(.top, 20)
-
+            
             HStack {
                 Text(transactionDate, format: .dateTime.weekday(.wide).month(.abbreviated).day().year())
                     .font(.system(size: 16))
@@ -182,43 +179,22 @@ struct CreateExpenseView: View {
             .padding(.bottom, 24)
         }
     }
-
-    // MARK: - Record Transaction Button
-
-    private var recordTransactionButton: some View {
-        Button {
-            Task { await viewModel.saveExpense() }
-        } label: {
-            HStack {
-                Image(systemName: "arrow.right")
-                    .font(.system(size: 14, weight: .semibold))
-            }
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 18)
-            .background(Color.brandDarkGreen)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-        }
-        .disabled(!viewModel.canSave || viewModel.isSaving)
-        .padding(.horizontal, 24)
-        .padding(.bottom, 16)
-    }
-
+    
     // MARK: - Reusable UI Components
-
+    
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
             .font(.system(size: 10, weight: .semibold))
             .tracking(1.5)
             .foregroundStyle(Color.brandOlive)
     }
-
+    
     private var sectionDivider: some View {
         Rectangle()
             .fill(Color.primary.opacity(0.08))
             .frame(height: 1)
     }
-
+    
     private func entityGroup<Content: View>(_ label: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(label)
@@ -228,7 +204,7 @@ struct CreateExpenseView: View {
             content()
         }
     }
-
+    
     private func entityField(_ value: String, icon: String, isEmpty: Bool = false) -> some View {
         HStack {
             Text(value)
@@ -246,7 +222,7 @@ struct CreateExpenseView: View {
                 .strokeBorder(Color.primary.opacity(0.12), lineWidth: 1)
         )
     }
-
+    
     private func entityPill(_ value: String) -> some View {
         Text(value)
             .font(.system(size: 14, weight: .medium))
@@ -257,7 +233,7 @@ struct CreateExpenseView: View {
                     .strokeBorder(Color.primary.opacity(0.12), lineWidth: 1)
             )
     }
-
+    
     private func entityFieldPlaceholder(_ placeholder: String) -> some View {
         HStack {
             Text(placeholder)
@@ -275,10 +251,12 @@ struct CreateExpenseView: View {
 }
 
 #Preview {
-    CreateExpenseView(
-        viewModel: LogExpenseViewModel(
-            accountRepository: InMemoryAccountRepository(),
-            expenseRepository: InMemoryExpenseRepository()
+    NavigationStack {
+        CreateExpenseView(
+            viewModel: LogExpenseViewModel(
+                accountRepository: InMemoryAccountRepository(),
+                expenseRepository: InMemoryExpenseRepository()
+            )
         )
-    )
+    }
 }

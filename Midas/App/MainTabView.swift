@@ -47,12 +47,14 @@ struct MainTabView: View {
                 value: AppTab.createExpense,
                 role: .search
             ) {
-                CreateExpenseView(
-                    viewModel: LogExpenseViewModel(
-                        accountRepository: accountRepository,
-                        expenseRepository: expenseRepository
+                NavigationStack {
+                    CreateExpenseView(
+                        viewModel: LogExpenseViewModel(
+                            accountRepository: accountRepository,
+                            expenseRepository: expenseRepository
+                        )
                     )
-                )
+                }
             }
             
         }
