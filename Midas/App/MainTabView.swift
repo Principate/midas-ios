@@ -48,8 +48,10 @@ struct MainTabView: View {
                 role: .search
             ) {
                 CreateExpenseView(
-                    accounts: accountRepository.accounts,
-                    categories: categoryRepository.categories
+                    viewModel: LogExpenseViewModel(
+                        accountRepository: accountRepository,
+                        expenseRepository: expenseRepository
+                    )
                 )
             }
             

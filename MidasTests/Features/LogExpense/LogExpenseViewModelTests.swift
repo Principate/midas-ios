@@ -193,6 +193,32 @@ struct LogExpenseViewModelTests {
         #expect(!vm.tags.contains("monthly"))
     }
 
+    @Test func test_parsedTags_shouldNotAccumulateIntermediateValues() {
+        let vm = makeViewModel()
+        vm.inputText = "#G"
+        vm.inputText = "#Gr"
+        vm.inputText = "#Gro"
+        vm.inputText = "#Groceries"
+        #expect(vm.tags == ["Groceries"])
+    }
+
+    @Test func test_parsedTags_whenTagRemovedFromInput_shouldDisappear() {
+        let vm = makeViewModel()
+        vm.inputText = "#monthly #food"
+        #expect(vm.tags.contains("monthly"))
+        #expect(vm.tags.contains("food"))
+        vm.inputText = "#monthly"
+        #expect(vm.tags == ["monthly"])
+    }
+
+    @Test func test_manualTags_shouldPersistAcrossReparses() {
+        let vm = makeViewModel()
+        vm.addTag("manual")
+        vm.inputText = "#parsed"
+        #expect(vm.tags.contains("manual"))
+        #expect(vm.tags.contains("parsed"))
+    }
+
     // MARK: - Category Creation
 
     @Test func test_createCategory_shouldAddToRepository() async {
